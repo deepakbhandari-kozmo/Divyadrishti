@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Drone Application & Research Center
 
 A web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers.
@@ -200,3 +201,7 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 ## Support
 
 For support and questions, contact the Uttarakhand Space Application Center development team.
+=======
+# Divyadrishti
+Drone Map Application
+>>>>>>> a61c893ae2058ffcd4ef32ec7182c433991c6653
