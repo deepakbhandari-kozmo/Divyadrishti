@@ -580,12 +580,12 @@ body.sidebar-collapsed #map {
     background: #2980b9;
 }
 
-/* Compass Control Styles */
+/* Interactive Compass Control Styles */
 .compass-control {
     background: white;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     margin-bottom: 10px;
     display: flex;
@@ -593,6 +593,18 @@ body.sidebar-collapsed #map {
     justify-content: center;
     position: relative;
     border: 2px solid #e9ecef;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.2s ease;
+    z-index: 1000;
+}
+
+.compass-control:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.compass-control:active {
+    cursor: grabbing;
 }
 
 .compass-container {
@@ -605,10 +617,21 @@ body.sidebar-collapsed #map {
 }
 
 .compass-needle {
-    font-size: 20px;
+    font-size: 22px;
     color: #dc3545;
     transform: rotate(-45deg);
     position: absolute;
+    cursor: grab;
+    transition: transform 0.1s ease;
+    z-index: 2;
+}
+
+.compass-needle:hover {
+    color: #c82333;
+}
+
+.compass-needle:active {
+    cursor: grabbing;
 }
 
 .compass-label {
@@ -619,6 +642,59 @@ body.sidebar-collapsed #map {
     font-size: 12px;
     font-weight: bold;
     color: #333;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.compass-reset {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 10px;
+    color: #6c757d;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 3;
+}
+
+.compass-reset:hover {
+    color: #495057;
+    background: white;
+    transform: scale(1.1);
+}
+
+/* Compass rotation indicators */
+.compass-control::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 8px;
+    background: #333;
+    border-radius: 1px;
+    z-index: 1;
+}
+
+.compass-control::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 6px;
+    background: #999;
+    border-radius: 1px;
+    z-index: 1;
 }
 
 /* Scale Control Styles */
@@ -736,4 +812,199 @@ body.sidebar-collapsed #map {
 
 .menu-toggle-btn i {
     font-size: 14px;
+}
+
+/* Feature popup styles - Updated to match theme */
+.feature-popup-card {
+    min-width: 280px;
+    max-width: 400px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+}
+
+.popup-header {
+    background: white;
+    color: #212529;
+    padding: 16px 20px;
+    margin: -10px -10px 15px -10px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.popup-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #212529;
+}
+
+.popup-title i {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.popup-content {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 0 5px;
+}
+
+.feature-attributes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 0;
+}
+
+.feature-attributes-table tr {
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s;
+}
+
+.feature-attributes-table tr:last-child {
+    border-bottom: none;
+}
+
+.feature-attributes-table tr:hover {
+    background: #f8f9fa;
+}
+
+.feature-attributes-table tr.priority-field {
+    background: #f8f9fa;
+    font-weight: 500;
+}
+
+.feature-attributes-table tr.priority-field:hover {
+    background: #e9ecef;
+}
+
+.field-name {
+    padding: 12px 15px;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    width: 40%;
+    vertical-align: top;
+    border-right: 1px solid #e9ecef;
+    font-size: 13px;
+}
+
+.field-value {
+    padding: 12px 15px;
+    color: #212529;
+    word-break: break-word;
+    font-weight: 400;
+}
+
+.priority-field .field-name {
+    background: #e3f2fd;
+    color: #1565c0;
+    font-weight: 700;
+}
+
+.priority-field .field-value {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    font-weight: 600;
+}
+
+.popup-footer {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-top: 1px solid #f1f3f4;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    margin-left: -10px;
+    margin-right: -10px;
+    margin-bottom: -10px;
+}
+
+.layer-info {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.popup-loading,
+.popup-no-data,
+.popup-error {
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+.popup-loading {
+    color: #007bff;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.popup-loading i {
+    margin-right: 8px;
+}
+
+.popup-no-data {
+    color: #6c757d;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.popup-error {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+    padding: 0;
+}
+
+.leaflet-popup-content {
+    margin: 10px;
+    line-height: 1.5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.leaflet-popup-tip {
+    background: white;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-close-button {
+    color: #6c757d !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    padding: 4px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    transition: all 0.2s !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    top: 8px !important;
+    right: 8px !important;
+}
+
+.leaflet-popup-close-button:hover {
+    background: transparent !important;
+    color: #212529 !important;
+    transform: scale(1.1) !important;
 }

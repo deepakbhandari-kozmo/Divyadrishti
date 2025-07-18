@@ -21,6 +21,8 @@ let currentBaseLayer = null; // To keep track of the currently loaded WMS base l
 let currentOverlayLayers = L.layerGroup(); // To manage dynamic overlay layers (vector, etc.)
 let cachedWorkspaceLayers = {}; // Cache to store fetched layers for each workspace
 
+// Add a global object to track layer states
+let layerStates = {};
 
 // --- Helper function to fetch layer bounds ---
 async function fetchLayerBounds(fullLayerId) {
@@ -274,7 +276,8 @@ function renderWorkspaces(workspaces) {
         // Reset to Uttarakhand state view
         map.setView([30.0668, 79.0193], 8);
         
-        // Uncheck all layer checkboxes
+        // Clear layer states and uncheck all checkboxes
+        layerStates = {};
         document.querySelectorAll('.layer-checkbox').forEach(checkbox => {
             checkbox.checked = false;
         });
@@ -386,6 +389,9 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
     
     if (rasterLayers && rasterLayers.length > 0) {
         rasterLayers.forEach(layerName => {
+            const workspaceName = layerListElement.closest('.workspace-item').dataset.workspaceName;
+            const layerKey = `${workspaceName}:${layerName}`;
+            
             const listItem = document.createElement('li');
             listItem.className = 'layer-list-item raster-layer-item';
             
@@ -396,6 +402,9 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
             checkbox.dataset.layerName = layerName;
             checkbox.dataset.layerType = 'raster';
             
+            // Restore checkbox state
+            checkbox.checked = layerStates[layerKey] || false;
+            
             const label = document.createElement('label');
             label.htmlFor = checkbox.id;
             label.innerHTML = `<i class="fas fa-image"></i> ${layerName}`;
@@ -404,13 +413,16 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
             listItem.appendChild(label);
             rasterList.appendChild(listItem);
             
-            // Add event listener for checkbox
             checkbox.addEventListener('change', function() {
                 const workspaceName = this.closest('.workspace-item').dataset.workspaceName;
+                const layerKey = `${workspaceName}:${layerName}`;
+                
+                // Update state
+                layerStates[layerKey] = this.checked;
+                
                 toggleRasterLayerInWorkspace(workspaceName, layerName, this.checked);
             });
             
-            // Also add click event to label for better UX
             label.addEventListener('click', function(e) {
                 e.preventDefault();
                 checkbox.checked = !checkbox.checked;
@@ -436,6 +448,9 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
     
     if (vectorLayers && vectorLayers.length > 0) {
         vectorLayers.forEach(layerName => {
+            const workspaceName = layerListElement.closest('.workspace-item').dataset.workspaceName;
+            const layerKey = `${workspaceName}:${layerName}`;
+            
             const listItem = document.createElement('li');
             listItem.className = 'layer-list-item vector-layer-item';
             
@@ -446,6 +461,9 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
             checkbox.dataset.layerName = layerName;
             checkbox.dataset.layerType = 'vector';
             
+            // Restore checkbox state
+            checkbox.checked = layerStates[layerKey] || false;
+            
             const label = document.createElement('label');
             label.htmlFor = checkbox.id;
             label.innerHTML = `<i class="fas fa-vector-square"></i> ${layerName}`;
@@ -454,13 +472,16 @@ function renderLayers(layerListElement, rasterLayers, vectorLayers) {
             listItem.appendChild(label);
             vectorList.appendChild(listItem);
             
-            // Add event listener for checkbox
             checkbox.addEventListener('change', function() {
                 const workspaceName = this.closest('.workspace-item').dataset.workspaceName;
+                const layerKey = `${workspaceName}:${layerName}`;
+                
+                // Update state
+                layerStates[layerKey] = this.checked;
+                
                 toggleVectorLayerInWorkspace(workspaceName, layerName, this.checked);
             });
             
-            // Also add click event to label for better UX
             label.addEventListener('click', function(e) {
                 e.preventDefault();
                 checkbox.checked = !checkbox.checked;
@@ -483,25 +504,25 @@ function toggleRasterLayerInWorkspace(workspaceName, layerName, isVisible) {
     if (isVisible) {
         // Add the raster layer as overlay (not replacing base layer)
         const wmsLayer = L.tileLayer.wms(`${GEOSERVER_WMS_BASE_URL}${workspaceName}/wms`, {
-                layers: fullLayerName,
-                format: 'image/png',
+            layers: fullLayerName,
+            format: 'image/png',
             transparent: true, // Changed to true to allow OSM to show through
-                version: '1.1.1',
+            version: '1.1.1',
             attribution: `Imagery &copy; ${workspaceName}`,
             opacity: 0.8, // Added opacity for better blending
-                maxZoom: 20,
+            maxZoom: 20,
             minZoom: 1,
             tileSize: 256,
             zIndex: 2 // Higher than base layer but lower than vector layers
-            });
+        });
             
-            wmsLayer._layerId = fullLayerName;
-            wmsLayer._layerName = layerName;
-            wmsLayer._workspaceName = workspaceName;
-            wmsLayer._layerType = 'raster';
+        wmsLayer._layerId = fullLayerName;
+        wmsLayer._layerName = layerName;
+        wmsLayer._workspaceName = workspaceName;
+        wmsLayer._layerType = 'raster';
             
         // Add to overlay group instead of replacing base layer
-            currentOverlayLayers.addLayer(wmsLayer);
+        currentOverlayLayers.addLayer(wmsLayer);
             
         console.log(`Added raster layer ${fullLayerName} as overlay`);
         
@@ -536,32 +557,36 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
     console.log(`Toggling vector layer: ${fullLayerName}, visible: ${isVisible}`);
     
     if (isVisible) {
-        // Add the layer to the map
+        // Add the layer to the map with click interaction
         const wmsLayer = L.tileLayer.wms(`${GEOSERVER_WMS_BASE_URL}${workspaceName}/wms`, {
-                layers: fullLayerName,
-                format: 'image/png',
-                transparent: true,
-                version: '1.1.1',
-                attribution: `Vector Data &copy; ${workspaceName}`,
+            layers: fullLayerName,
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.1',
+            attribution: `Vector Data &copy; ${workspaceName}`,
             opacity: 0.8,
-                maxZoom: 20,
+            maxZoom: 20,
             minZoom: 1,
             tileSize: 256,
-            zIndex: 3 // Higher than raster layers
-            });
-            
-            wmsLayer._layerId = fullLayerName;
-            wmsLayer._layerName = layerName;
-            wmsLayer._workspaceName = workspaceName;
-            wmsLayer._layerType = 'vector';
-            
-            // Add to overlay group
-            currentOverlayLayers.addLayer(wmsLayer);
-            
+            zIndex: 3
+        });
+        
+        wmsLayer._layerId = fullLayerName;
+        wmsLayer._layerName = layerName;
+        wmsLayer._workspaceName = workspaceName;
+        wmsLayer._layerType = 'vector';
+        
+        // Add to overlay group
+        currentOverlayLayers.addLayer(wmsLayer);
+        
         console.log(`Added vector layer ${fullLayerName} to map`);
-            
+        
         // Add legend card
         addLegendCard(workspaceName, layerName, fullLayerName);
+        
+        // Add click event listener for GetFeatureInfo
+        addVectorLayerClickHandler(workspaceName, layerName, fullLayerName);
+        
     } else {
         // Remove the layer from the map
         let layerRemoved = false;
@@ -579,6 +604,9 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
         
         // Remove legend card
         removeLegendCard(fullLayerName);
+        
+        // Remove click handler
+        removeVectorLayerClickHandler(fullLayerName);
     }
 }
 
@@ -827,17 +855,20 @@ async function performSearch() {
 // --- Initial calls on page load ---
 document.addEventListener('DOMContentLoaded', initializeMap);
 
-// Function to add compass control
+// Function to add interactive compass control with working map rotation
 function addCompassControl() {
     const CompassControl = L.Control.extend({
         onAdd: function(map) {
             const container = L.DomUtil.create('div', 'compass-control');
             container.innerHTML = `
                 <div class="compass-container">
-                    <div class="compass-needle">
+                    <div class="compass-needle" id="compass-needle">
                         <i class="fas fa-location-arrow"></i>
                     </div>
                     <div class="compass-label">N</div>
+                    <div class="compass-reset" id="compass-reset" title="Reset North">
+                        <i class="fas fa-undo"></i>
+                    </div>
                 </div>
             `;
             
@@ -845,11 +876,111 @@ function addCompassControl() {
             L.DomEvent.disableClickPropagation(container);
             L.DomEvent.disableScrollPropagation(container);
             
+            // Add compass interaction
+            this.setupCompassInteraction(container);
+            
             return container;
         },
         
+        setupCompassInteraction: function(container) {
+            const needle = container.querySelector('#compass-needle');
+            const resetBtn = container.querySelector('#compass-reset');
+            let isDragging = false;
+            let currentRotation = 0;
+            
+            // Function to rotate the map
+            const rotateMap = (angle) => {
+                const mapContainer = map.getContainer();
+                mapContainer.style.transform = `rotate(${angle}deg)`;
+                mapContainer.style.transformOrigin = 'center center';
+                
+                // Update all map controls to counter-rotate
+                const controls = mapContainer.querySelectorAll('.leaflet-control');
+                controls.forEach(control => {
+                    if (!control.classList.contains('compass-control')) {
+                        control.style.transform = `rotate(${-angle}deg)`;
+                    }
+                });
+                
+                // Counter-rotate popups
+                const popups = mapContainer.querySelectorAll('.leaflet-popup');
+                popups.forEach(popup => {
+                    popup.style.transform = `rotate(${-angle}deg)`;
+                });
+            };
+            
+            // Mouse/touch events for needle rotation
+            const startDrag = (e) => {
+                e.preventDefault();
+                isDragging = true;
+                container.style.cursor = 'grabbing';
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', onDrag, { passive: false });
+                document.addEventListener('touchend', stopDrag);
+            };
+            
+            const onDrag = (e) => {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                
+                const deltaX = clientX - centerX;
+                const deltaY = clientY - centerY;
+                
+                // Calculate angle in degrees
+                let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+                angle = (angle + 90) % 360; // Adjust for needle pointing up
+                if (angle < 0) angle += 360;
+                
+                currentRotation = angle;
+                
+                // Update needle rotation
+                needle.style.transform = `rotate(${angle - 45}deg)`; // -45 because default icon is rotated
+                
+                // Rotate the map
+                rotateMap(-angle); // Negative because we want opposite rotation
+            };
+            
+            const stopDrag = () => {
+                isDragging = false;
+                container.style.cursor = 'grab';
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', onDrag);
+                document.removeEventListener('touchend', stopDrag);
+            };
+            
+            // Reset compass to North
+            const resetCompass = () => {
+                currentRotation = 0;
+                needle.style.transform = 'rotate(-45deg)';
+                rotateMap(0);
+            };
+            
+            // Event listeners
+            needle.addEventListener('mousedown', startDrag);
+            needle.addEventListener('touchstart', startDrag, { passive: false });
+            resetBtn.addEventListener('click', resetCompass);
+            
+            // Set initial cursor
+            container.style.cursor = 'grab';
+        },
+        
         onRemove: function(map) {
-            // Nothing to do here
+            // Clean up event listeners and reset map rotation
+            const mapContainer = map.getContainer();
+            mapContainer.style.transform = '';
+            const controls = mapContainer.querySelectorAll('.leaflet-control');
+            controls.forEach(control => {
+                control.style.transform = '';
+            });
         }
     });
     
@@ -906,4 +1037,209 @@ async function fitMapToLayerBounds(fullLayerName) {
     }
 }
 
+// Function to add click handler for vector layers
+function addVectorLayerClickHandler(workspaceName, layerName, fullLayerName) {
+    // Store the click handler function so we can remove it later
+    const clickHandler = async function(e) {
+        // Check if this layer is currently visible
+        const layerKey = `${workspaceName}:${layerName}`;
+        if (!layerStates[layerKey]) {
+            return; // Layer is not visible, don't handle clicks
+        }
+        
+        const latlng = e.latlng;
+        console.log(`Clicked on map at: ${latlng.lat}, ${latlng.lng} for layer ${fullLayerName}`);
+        
+        // Show loading popup first
+        const loadingPopup = L.popup()
+            .setLatLng(latlng)
+            .setContent('<div class="popup-loading"><i class="fas fa-spinner fa-spin"></i> Loading feature info...</div>')
+            .openOn(map);
+        
+        try {
+            // Get feature info using WMS GetFeatureInfo
+            const featureInfo = await getFeatureInfo(workspaceName, layerName, latlng);
+            
+            if (featureInfo && featureInfo.features && featureInfo.features.length > 0) {
+                const feature = featureInfo.features[0];
+                const popupContent = createFeaturePopupContent(feature.properties, layerName);
+                
+                // Update popup with feature info
+                loadingPopup.setContent(popupContent);
+            } else {
+                loadingPopup.setContent('<div class="popup-no-data">No feature found at this location</div>');
+            }
+        } catch (error) {
+            console.error('Error getting feature info:', error);
+            loadingPopup.setContent('<div class="popup-error">Error loading feature information</div>');
+        }
+    };
+    
+    // Store the handler for later removal
+    if (!window.vectorLayerClickHandlers) {
+        window.vectorLayerClickHandlers = {};
+    }
+    window.vectorLayerClickHandlers[fullLayerName] = clickHandler;
+    
+    // Add click event to map
+    map.on('click', clickHandler);
+}
+
+// Function to remove click handler for vector layers
+function removeVectorLayerClickHandler(fullLayerName) {
+    if (window.vectorLayerClickHandlers && window.vectorLayerClickHandlers[fullLayerName]) {
+        map.off('click', window.vectorLayerClickHandlers[fullLayerName]);
+        delete window.vectorLayerClickHandlers[fullLayerName];
+        console.log(`Removed click handler for ${fullLayerName}`);
+    }
+}
+
+// Simplified function to get feature info using only backend proxy
+async function getFeatureInfo(workspaceName, layerName, latlng) {
+    try {
+        const point = map.latLngToContainerPoint(latlng);
+        const size = map.getSize();
+        const bounds = map.getBounds();
+        
+        const params = new URLSearchParams({
+            bbox: `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`,
+            width: size.x,
+            height: size.y,
+            x: Math.round(point.x),
+            y: Math.round(point.y)
+        });
+        
+        const url = `/api/geoserver/feature_info/${encodeURIComponent(workspaceName)}/${encodeURIComponent(layerName)}?${params}`;
+        
+        console.log('GetFeatureInfo URL:', url);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Feature info response:', data);
+        
+        return data;
+        
+    } catch (error) {
+        console.error('Error in getFeatureInfo:', error);
+        throw error;
+    }
+}
+
+// Updated function to create beautiful popup content
+function createFeaturePopupContent(properties, layerName) {
+    if (!properties || Object.keys(properties).length === 0) {
+        return `
+            <div class="feature-popup-card">
+                <div class="popup-no-data">
+                    <i class="fas fa-info-circle"></i>
+                    No attribute data available
+                </div>
+            </div>
+        `;
+    }
+    
+    // Get the main title (Name field or layer name)
+    const mainTitle = properties.Name || properties.name || properties.NAME || layerName;
+    
+    // Create a beautiful popup card
+    let popupHTML = `
+        <div class="feature-popup-card">
+            <div class="popup-header">
+                <h4 class="popup-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    ${mainTitle}
+                </h4>
+            </div>
+            <div class="popup-content">
+                <table class="feature-attributes-table">
+    `;
+    
+    // Add key attributes first (Name, Area, ID)
+    const priorityFields = ['Name', 'name', 'NAME', 'Area', 'area', 'AREA', 'ID', 'id', 'Id'];
+    const addedFields = new Set();
+    
+    // Add priority fields first
+    priorityFields.forEach(field => {
+        if (properties.hasOwnProperty(field) && properties[field] !== null && properties[field] !== undefined && properties[field] !== '') {
+            const value = properties[field];
+            let displayValue;
+            
+            if (typeof value === 'number') {
+                if (field.toLowerCase().includes('area')) {
+                    displayValue = `${value.toLocaleString()} sq units`;
+                } else {
+                    displayValue = value.toLocaleString();
+                }
+            } else {
+                displayValue = value;
+            }
+            
+            popupHTML += `
+                <tr class="priority-field">
+                    <td class="field-name">${field}</td>
+                    <td class="field-value">${displayValue}</td>
+                </tr>
+            `;
+            addedFields.add(field);
+        }
+    });
+    
+    // Add remaining fields
+    Object.entries(properties).forEach(([key, value]) => {
+        if (!addedFields.has(key) && value !== null && value !== undefined && value !== '') {
+            const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
+            popupHTML += `
+                <tr>
+                    <td class="field-name">${key}</td>
+                    <td class="field-value">${displayValue}</td>
+                </tr>
+            `;
+        }
+    });
+    
+    popupHTML += `
+                </table>
+            </div>
+            <div class="popup-footer">
+                <small class="layer-info">
+                    <i class="fas fa-layer-group"></i>
+                    ${layerName}
+                </small>
+            </div>
+        </div>
+    `;
+    
+    return popupHTML;
+}
+
+// Function to add compass control (simple, non-interactive)
+function addCompassControl() {
+    const CompassControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'compass-control');
+            container.innerHTML = `
+                <div class="compass-container">
+                    <div class="compass-needle">
+                        <i class="fas fa-location-arrow"></i>
+                    </div>
+                    <div class="compass-label">N</div>
+                </div>
+            `;
+            
+            // Prevent map events on compass
+            L.DomEvent.disableClickPropagation(container);
+            L.DomEvent.disableScrollPropagation(container);
+            
+            return container;
+        }
+    });
+    
+    new CompassControl({ position: 'bottomleft' }).addTo(map);
+}
 

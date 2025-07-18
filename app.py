@@ -258,6 +258,60 @@ def get_geoserver_layer_bounds(workspace_name, layer_name):
         app.logger.error(f"Error fetching bounds for {full_layer_id} from GeoServer: {e}")
         return jsonify({'error': f'Failed to fetch bounds for {full_layer_id}: {e}'}), 500
 
+@app.route('/api/geoserver/feature_info/<workspace>/<layer>')
+@login_required
+def get_feature_info(workspace, layer):
+    try:
+        # Get query parameters
+        bbox = request.args.get('bbox')
+        width = request.args.get('width')
+        height = request.args.get('height')
+        x = request.args.get('x')
+        y = request.args.get('y')
+        
+        if not all([bbox, width, height, x, y]):
+            return jsonify({'error': 'Missing required parameters'}), 400
+        
+        # Build GetFeatureInfo URL
+        params = {
+            'REQUEST': 'GetFeatureInfo',
+            'SERVICE': 'WMS',
+            'SRS': 'EPSG:4326',
+            'VERSION': '1.1.1',
+            'FORMAT': 'image/png',
+            'BBOX': bbox,
+            'HEIGHT': height,
+            'WIDTH': width,
+            'LAYERS': f'{workspace}:{layer}',
+            'QUERY_LAYERS': f'{workspace}:{layer}',
+            'INFO_FORMAT': 'application/json',
+            'X': x,
+            'Y': y,
+            'FEATURE_COUNT': '1'
+        }
+        
+        url = f"{GEOSERVER_BASE_URL}/{workspace}/wms?" + "&".join([f"{k}={v}" for k, v in params.items()])
+        
+        app.logger.info(f"GetFeatureInfo URL: {url}")
+        
+        response = requests.get(url, auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD), timeout=10)
+        response.raise_for_status()
+        
+        # Check if response is JSON
+        try:
+            data = response.json()
+            return jsonify(data)
+        except ValueError:
+            # If not JSON, return the text response
+            return jsonify({'error': 'Non-JSON response from GeoServer', 'response': response.text[:500]})
+            
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error getting feature info for {workspace}:{layer}: {e}")
+        return jsonify({'error': f'Failed to get feature info: {e}'}), 500
+    except Exception as e:
+        app.logger.error(f"Unexpected error in get_feature_info: {e}", exc_info=True)
+        return jsonify({'error': f'Unexpected error: {e}'}), 500
+
 # @app.route('/api/map_screenshot', methods=['POST'])
 # def generate_map_screenshot():
 #     ... (removed)
