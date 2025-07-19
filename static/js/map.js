@@ -16,13 +16,83 @@ const FALLBACK_BOUNDS = [[-90, -180], [90, 180]]; // World view
 
 // --- Global Map Variables ---
 let map;
-let osmBaseLayer = null; // OpenStreetMap base layer
-let currentBaseLayer = null; // To keep track of the currently loaded WMS base layer
-let currentOverlayLayers = L.layerGroup(); // To manage dynamic overlay layers (vector, etc.)
-let cachedWorkspaceLayers = {}; // Cache to store fetched layers for each workspace
-
-// Add a global object to track layer states
+let osmBaseLayer = null;
+let currentBaseLayer = null;
+let currentOverlayLayers = L.layerGroup();
+let cachedWorkspaceLayers = {};
 let layerStates = {};
+
+// Base layer definitions
+const baseLayers = {
+    osm: {
+        name: 'OpenStreetMap',
+        layer: () => L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        })
+    },
+    'google-satellite': {
+        name: 'Google Satellite',
+        layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '&copy; Google',
+            maxZoom: 20
+        })
+    },
+    'google-hybrid': {
+        name: 'Google Hybrid',
+        layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '&copy; Google',
+            maxZoom: 20
+        })
+    },
+    'google-terrain': {
+        name: 'Google Terrain',
+        layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+            attribution: '&copy; Google',
+            maxZoom: 20
+        })
+    },
+    'esri-satellite': {
+        name: 'Esri Satellite',
+        layer: () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+            maxZoom: 18
+        })
+    },
+    'cartodb-light': {
+        name: 'CartoDB Light',
+        layer: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 19
+        })
+    },
+    'cartodb-dark': {
+        name: 'CartoDB Dark',
+        layer: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 19
+        })
+    }
+};
+
+// Function to change base layer (updated to not affect overlays or location)
+function changeBaseLayer(layerKey) {
+    // Remove current base layer
+    if (currentBaseLayer) {
+        map.removeLayer(currentBaseLayer);
+    }
+    
+    // Add new base layer
+    const baseLayerConfig = baseLayers[layerKey];
+    if (baseLayerConfig) {
+        currentBaseLayer = baseLayerConfig.layer();
+        currentBaseLayer.addTo(map);
+        console.log(`Switched to base layer: ${baseLayerConfig.name}`);
+    }
+    
+    // DO NOT clear overlays or change location
+    // Keep current map view and overlay layers intact
+}
 
 // --- Helper function to fetch layer bounds ---
 async function fetchLayerBounds(fullLayerId) {
@@ -69,7 +139,10 @@ async function initializeMap() {
         maxZoom: 19
     }).addTo(map);
     
-    // Set initial view to Uttarakhand state (broader view than Dehradun)
+    // Set current base layer reference
+    currentBaseLayer = osmBaseLayer;
+    
+    // Set initial view to Uttarakhand state (default location)
     map.setView([30.0668, 79.0193], 8); // Uttarakhand center coordinates with zoom level 8
     
     // Add the currentOverlayLayers group to the map from the start
@@ -248,41 +321,30 @@ async function fetchAndRenderWorkspaces() {
 function renderWorkspaces(workspaces) {
     workspaceListContainer.innerHTML = '';
     
-    // Add OSM reset button at the top
-    const osmResetDiv = document.createElement('div');
-    osmResetDiv.className = 'osm-reset-container';
-    osmResetDiv.innerHTML = `
-        <button class="osm-reset-btn">
-            <i class="fas fa-globe"></i> Reset to OpenStreetMap
-        </button>
+    // Add base map selector at the top
+    const baseMapSelectorDiv = document.createElement('div');
+    baseMapSelectorDiv.className = 'base-map-selector';
+    baseMapSelectorDiv.innerHTML = `
+        <label for="base-map-select">Base Map:</label>
+        <select id="base-map-select" class="base-map-dropdown">
+            <option value="osm">OpenStreetMap</option>
+            <option value="google-satellite">Google Satellite</option>
+            <option value="google-hybrid">Google Hybrid</option>
+            <option value="google-terrain">Google Terrain</option>
+            <option value="esri-satellite">Esri Satellite</option>
+            <option value="cartodb-light">CartoDB Light</option>
+            <option value="cartodb-dark">CartoDB Dark</option>
+        </select>
     `;
-    workspaceListContainer.appendChild(osmResetDiv);
+    workspaceListContainer.appendChild(baseMapSelectorDiv);
     
-    // Add event listener for OSM reset button
-    const osmResetBtn = osmResetDiv.querySelector('.osm-reset-btn');
-    osmResetBtn.addEventListener('click', () => {
-        // Remove any GeoServer base layers
-        if (currentBaseLayer) {
-            map.removeLayer(currentBaseLayer);
-            currentBaseLayer = null;
-        }
-        // Clear overlay layers
-        currentOverlayLayers.clearLayers();
-        // Clear legend container
-        const legendContainer = document.getElementById('legend-container');
-        if (legendContainer) {
-            legendContainer.innerHTML = '';
-        }
-        // Reset to Uttarakhand state view
-        map.setView([30.0668, 79.0193], 8);
-        
-        // Clear layer states and uncheck all checkboxes
-        layerStates = {};
-        document.querySelectorAll('.layer-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
-        });
+    // Add event listener for base map selection (simplified)
+    const baseMapSelect = baseMapSelectorDiv.querySelector('#base-map-select');
+    baseMapSelect.addEventListener('change', (e) => {
+        changeBaseLayer(e.target.value);
+        // REMOVED: clearing overlays, legends, layer states, and location reset
     });
-    
+
     if (workspaces.length === 0) {
         const noWorkspacesDiv = document.createElement('div');
         noWorkspacesDiv.innerHTML = '<p>No workspaces found.</p>';
@@ -502,35 +564,35 @@ function toggleRasterLayerInWorkspace(workspaceName, layerName, isVisible) {
     console.log(`Toggling raster layer: ${fullLayerName}, visible: ${isVisible}`);
     
     if (isVisible) {
-        // Add the raster layer as overlay (not replacing base layer)
+        // Add the raster layer as overlay
         const wmsLayer = L.tileLayer.wms(`${GEOSERVER_WMS_BASE_URL}${workspaceName}/wms`, {
             layers: fullLayerName,
             format: 'image/png',
-            transparent: true, // Changed to true to allow OSM to show through
+            transparent: true,
             version: '1.1.1',
             attribution: `Imagery &copy; ${workspaceName}`,
-            opacity: 0.8, // Added opacity for better blending
+            opacity: 0.8, // Default opacity
             maxZoom: 20,
             minZoom: 1,
             tileSize: 256,
-            zIndex: 2 // Higher than base layer but lower than vector layers
+            zIndex: 2
         });
-            
+        
         wmsLayer._layerId = fullLayerName;
         wmsLayer._layerName = layerName;
         wmsLayer._workspaceName = workspaceName;
         wmsLayer._layerType = 'raster';
-            
-        // Add to overlay group instead of replacing base layer
-        currentOverlayLayers.addLayer(wmsLayer);
-            
-        console.log(`Added raster layer ${fullLayerName} as overlay`);
         
-        // Fit map to layer bounds
-        fitMapToLayerBounds(fullLayerName);
-            
-        // Add legend card for raster layer
+        // Add to overlay group
+        currentOverlayLayers.addLayer(wmsLayer);
+        
+        console.log(`Added raster layer ${fullLayerName} to map`);
+        
+        // Add legend card with opacity control
         addLegendCard(workspaceName, layerName, fullLayerName);
+        
+        // Auto-zoom to layer bounds
+        fitMapToLayerBounds(fullLayerName);
     } else {
         // Remove the raster layer from overlays
         let layerRemoved = false;
@@ -564,7 +626,7 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
             transparent: true,
             version: '1.1.1',
             attribution: `Vector Data &copy; ${workspaceName}`,
-            opacity: 0.8,
+            opacity: 0.8, // Default opacity
             maxZoom: 20,
             minZoom: 1,
             tileSize: 256,
@@ -581,14 +643,16 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
         
         console.log(`Added vector layer ${fullLayerName} to map`);
         
-        // Add legend card
+        // Add legend card with opacity control
         addLegendCard(workspaceName, layerName, fullLayerName);
         
         // Add click event listener for GetFeatureInfo
         addVectorLayerClickHandler(workspaceName, layerName, fullLayerName);
         
+        // Auto-zoom to layer bounds
+        fitMapToLayerBounds(fullLayerName);
     } else {
-        // Remove the layer from the map
+        // Remove the vector layer from overlays
         let layerRemoved = false;
         currentOverlayLayers.eachLayer(layer => {
             if (layer._layerId === fullLayerName && layer._layerType === 'vector') {
@@ -604,9 +668,6 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
         
         // Remove legend card
         removeLegendCard(fullLayerName);
-        
-        // Remove click handler
-        removeVectorLayerClickHandler(fullLayerName);
     }
 }
 
@@ -657,6 +718,10 @@ function addLegendCard(workspaceName, layerName, fullLayerName) {
     // Generate GeoServer GetLegendGraphic URL
     const legendUrl = `${GEOSERVER_LEGEND_GRAPHIC_BASE_URL}${workspaceName}/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&LAYER=${fullLayerName}&STYLE=`;
     
+    // Generate unique slider ID
+    const sliderId = `opacity-slider-${fullLayerName.replace(':', '-')}`;
+    const valueId = `opacity-value-${fullLayerName.replace(':', '-')}`;
+    
     legendItem.innerHTML = `
         <div class="legend-item-content">
             <div class="legend-graphic-container">
@@ -668,11 +733,37 @@ function addLegendCard(workspaceName, layerName, fullLayerName) {
             </div>
             <span class="legend-layer-name">${layerName}</span>
         </div>
+        <div class="opacity-control">
+            <span class="opacity-label">Opacity:</span>
+            <input type="range" 
+                   id="${sliderId}" 
+                   class="opacity-slider" 
+                   min="0" 
+                   max="100" 
+                   value="80" 
+                   data-layer-id="${fullLayerName}">
+            <span id="${valueId}" class="opacity-value">80%</span>
+        </div>
     `;
     
     legendItems.appendChild(legendItem);
     
-    console.log(`Added GeoServer legend for ${fullLayerName} with URL: ${legendUrl}`);
+    // Add event listener for opacity slider
+    const opacitySlider = document.getElementById(sliderId);
+    const opacityValue = document.getElementById(valueId);
+    
+    opacitySlider.addEventListener('input', function() {
+        const opacity = this.value / 100; // Convert to 0-1 range
+        const layerId = this.dataset.layerId;
+        
+        // Update display value
+        opacityValue.textContent = `${this.value}%`;
+        
+        // Update layer opacity
+        updateLayerOpacity(layerId, opacity);
+    });
+    
+    console.log(`Added GeoServer legend for ${fullLayerName} with opacity control`);
 }
 
 // Function to clear all legends
@@ -707,6 +798,16 @@ function removeLegendCard(fullLayerName) {
             legendContainer.remove();
         }
     }
+}
+
+// Function to update layer opacity
+function updateLayerOpacity(fullLayerName, opacity) {
+    currentOverlayLayers.eachLayer(layer => {
+        if (layer._layerId === fullLayerName) {
+            layer.setOpacity(opacity);
+            console.log(`Updated opacity for ${fullLayerName} to ${opacity}`);
+        }
+    });
 }
 
 
@@ -827,7 +928,7 @@ function setLanguage(lang) {
 async function performSearch() {
     const query = document.getElementById('search-input').value;
     if (!query) {
-        // If no query, go to Uttarakhand state view
+        // If no query, go to Uttarakhand state view (default location)
         map.setView([30.0668, 79.0193], 8);
         L.marker([30.0668, 79.0193]).addTo(map)
             .bindPopup("Uttarakhand, India").openPopup();

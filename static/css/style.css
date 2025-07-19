@@ -77,34 +77,48 @@
     background: #f8f9fa;
 }
 
-/* OSM Reset Button */
-.osm-reset-container {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #dee2e6;
+/* Base Map Selector Styles */
+.base-map-selector {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+    margin-bottom: 10px;
 }
 
-.osm-reset-btn {
-    width: 100%;
-    padding: 12px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+.base-map-selector label {
+    display: block;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
     font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
 }
 
-.osm-reset-btn:hover {
-    background: #218838;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+.base-map-dropdown {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.osm-reset-btn i {
-    margin-right: 8px;
+.base-map-dropdown:hover {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.base-map-dropdown:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Remove old OSM reset button styles */
+.osm-reset-container {
+    display: none;
 }
 
 /* Workspace Items */
@@ -325,18 +339,24 @@ body.sidebar-collapsed .legend-container {
     padding: 16px 20px;
 }
 
+/* Legend item with opacity control */
 .legend-item {
     margin-bottom: 16px;
+    border-bottom: 1px solid #f1f3f4;
+    padding-bottom: 16px;
 }
 
 .legend-item:last-child {
     margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .legend-item-content {
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    margin-bottom: 12px;
 }
 
 .legend-graphic-container {
@@ -361,6 +381,76 @@ body.sidebar-collapsed .legend-container {
     color: #212529;
     line-height: 1.2;
     flex: 1;
+}
+
+/* Opacity control styles */
+.opacity-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.opacity-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6c757d;
+    min-width: 50px;
+}
+
+.opacity-slider {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: #dee2e6;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.opacity-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.opacity-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    min-width: 35px;
+    text-align: right;
+}
+
+/* Hover effects for opacity control */
+.opacity-control:hover .opacity-slider::-webkit-slider-thumb {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+.opacity-control:hover .opacity-slider::-moz-range-thumb {
+    background: #0056b3;
+    transform: scale(1.1);
 }
 
 .legend-error {
