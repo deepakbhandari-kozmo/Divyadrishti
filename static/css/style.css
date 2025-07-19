@@ -1098,3 +1098,57 @@ body.sidebar-collapsed #map {
     color: #212529 !important;
     transform: scale(1.1) !important;
 }
+
+/* Export PDF button */
+#export-pdf {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+#export-pdf:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#export-pdf:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* PDF export loading state */
+.pdf-loading {
+    position: relative;
+}
+
+.pdf-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

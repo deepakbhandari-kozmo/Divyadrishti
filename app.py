@@ -4,6 +4,14 @@ from flask import Flask, render_template, request, jsonify, send_file, session, 
 import os
 import requests
 from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+import io
+import base64
+from PIL import Image as PILImage, ImageDraw, ImageFont
+import tempfile
 
 app = Flask(__name__)
 
@@ -26,24 +34,26 @@ def login():
     if request.method == 'GET':
         return render_template('login.html')
     
-    # Handle POST request (login form submission)
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    user_type = data.get('user_type', 'user')
-    captcha = data.get('captcha')
+    username = request.form.get('username')
+    password = request.form.get('password')
+    captcha = request.form.get('captcha')
     
-    # Note: In a real application, you would validate the captcha server-side
-    # For this demo, we're doing client-side validation
+    # Simple captcha validation (you can enhance this)
+    expected_captcha = request.form.get('expected_captcha', '').upper()
     
-    # Simple authentication check
+    if not username or not password or not captcha:
+        return render_template('login.html', error='All fields are required')
+    
+    if captcha.upper() != expected_captcha:
+        return render_template('login.html', error='Invalid captcha')
+    
+    # Check credentials
     if username in DEFAULT_CREDENTIALS and DEFAULT_CREDENTIALS[username] == password:
         session['logged_in'] = True
         session['username'] = username
-        session['user_type'] = user_type
-        return jsonify({'success': True, 'message': 'Login successful'})
+        return redirect(url_for('index'))
     else:
-        return jsonify({'success': False, 'message': 'Invalid username or password'})
+        return render_template('login.html', error='Invalid username or password')
 
 @app.route('/logout')
 def logout():
@@ -315,6 +325,283 @@ def get_feature_info(workspace, layer):
 # @app.route('/api/map_screenshot', methods=['POST'])
 # def generate_map_screenshot():
 #     ... (removed)
+
+@app.route('/api/export_pdf', methods=['POST'])
+@login_required
+def export_pdf():
+    """
+    Generate PDF export of current map view with header, map image, scale, address and legends
+    """
+    try:
+        data = request.get_json()
+        app.logger.info(f"PDF export request received: {data}")
+        
+        # Create PDF buffer
+        buffer = io.BytesIO()
+        
+        # Create PDF document in portrait A4 with normal margins
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=72,  # 1 inch = 72 points (normal margin)
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        # Build PDF content
+        story = []
+        styles = getSampleStyleSheet()
+        
+        # Add header with logo and title (similar to web header)
+        logo_img = None
+        try:
+            # Try to load the logo
+            logo_path = os.path.join('static', 'images', 'logo.png')
+            if os.path.exists(logo_path):
+                logo_img = Image(logo_path, width=40, height=40)
+        except Exception as e:
+            app.logger.error(f"Error loading logo: {e}")
+            logo_img = None
+        
+        # Create header table with logo and titles (properly aligned horizontally)
+        if logo_img:
+            header_data = [
+                [logo_img, Paragraph('<b>Drone Application & Research Center</b><br/>Uttarakhand Space Application Center', styles['Normal'])]
+            ]
+            header_table = Table(header_data, colWidths=[60, 390])
+            header_table.setStyle(TableStyle([
+                ('FONTNAME', (1, 0), (1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (1, 0), (1, 0), 14),
+                ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor('#2c3e50')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ]))
+        else:
+            # Header without logo
+            title = Paragraph('<b>Drone Application & Research Center</b>', styles['Title'])
+            subtitle = Paragraph('Uttarakhand Space Application Center', styles['Normal'])
+            header_table = Table([[title], [subtitle]], colWidths=[450])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ]))
+        
+        story.append(header_table)
+        story.append(Spacer(1, 20))
+        
+        # Generate and add map image
+        map_image_path = generate_map_image(data)
+        if map_image_path and os.path.exists(map_image_path):
+            # Add map image with proper sizing for A4 portrait
+            img = Image(map_image_path, width=450, height=300)
+            story.append(img)
+            story.append(Spacer(1, 15))
+        else:
+            # Add placeholder if image generation fails
+            placeholder = Paragraph('<b>Map image could not be generated</b>', styles['Normal'])
+            story.append(placeholder)
+            story.append(Spacer(1, 15))
+        
+        # Add map information in a compact table
+        info_data = [
+            ['Scale:', data.get('scale', 'Not available')],
+            ['Coordinates:', f"{data.get('center', {}).get('lat', 0):.6f}, {data.get('center', {}).get('lng', 0):.6f}"],
+            ['Address:', (data.get('address', 'Not available')[:80] + '...') if len(data.get('address', '')) > 80 else data.get('address', 'Not available')],
+            ['Date:', data.get('timestamp', '').split('T')[0] if data.get('timestamp') else 'Not available'],
+            ['North:', '↑ N']
+        ]
+        
+        info_table = Table(info_data, colWidths=[80, 370])
+        info_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8f9fa')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 10))
+        
+        # Add active layers legend (simplified without images)
+        active_layers = data.get('activeLayers', [])
+        
+        if active_layers:
+            legend_title = Paragraph('<b>Active Layers:</b>', styles['Normal'])
+            story.append(legend_title)
+            story.append(Spacer(1, 5))
+            
+            # Simplified table structure without legend images
+            legend_data = [['Layer', 'Type', 'Opacity']]
+            for layer in active_layers[:8]:  # Limit to 8 layers to fit on page
+                layer_name = str(layer.get('name', 'Unknown'))  # Convert to string
+                
+                # Safely truncate layer name
+                display_name = layer_name[:20] + '...' if len(layer_name) > 20 else layer_name
+                layer_type = str(layer.get('type', 'Unknown')).title()
+                opacity_value = layer.get('opacity', 0.8)
+                
+                # Ensure opacity is a number
+                try:
+                    opacity_percent = f"{int(float(opacity_value) * 100)}%"
+                except (ValueError, TypeError):
+                    opacity_percent = "80%"
+                
+                legend_data.append([
+                    display_name,
+                    layer_type,
+                    opacity_percent
+                ])
+            
+            legend_table = Table(legend_data, colWidths=[200, 100, 80])
+            legend_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e9ecef')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            
+            story.append(legend_table)
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Clean up temporary map image file AFTER PDF is built
+        if map_image_path and os.path.exists(map_image_path):
+            try:
+                os.remove(map_image_path)
+            except Exception as e:
+                app.logger.warning(f"Failed to cleanup map image file {map_image_path}: {e}")
+        
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f'map_export_{data.get("timestamp", "").split("T")[0]}.pdf',
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        app.logger.error(f"PDF export failed: {str(e)}", exc_info=True)
+        return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
+
+def generate_map_image(data):
+    """
+    Generate map image using WMS GetMap request with base layer and overlays
+    """
+    try:
+        bounds = data['bounds']
+        center = data['center']
+        zoom = data['zoom']
+        active_layers = data.get('activeLayers', [])
+        
+        width, height = 800, 600
+        
+        # Create temporary image file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+        temp_file.close()
+        
+        # First, get base map from OpenStreetMap
+        base_image = None
+        try:
+            # Use OpenStreetMap tiles
+            tile_z = min(zoom, 18)  # OSM max zoom is 19, but we limit for better performance
+            osm_url = f"https://tile.openstreetmap.org/{tile_z}/{int((center['lng'] + 180) / 360 * (2 ** tile_z))}/{int((1 - (center['lat'] + 90) / 180) * (2 ** tile_z))}.png"
+            
+            response = requests.get(osm_url, timeout=10, headers={'User-Agent': 'MapExportApp/1.0'})
+            if response.status_code == 200:
+                base_image = PILImage.open(io.BytesIO(response.content))
+                # Resize to our target size
+                base_image = base_image.resize((width, height), PILImage.Resampling.LANCZOS)
+        except Exception as e:
+            app.logger.warning(f"Base map request failed: {e}")
+        
+        # If no base image, create a simple one
+        if base_image is None:
+            base_image = PILImage.new('RGB', (width, height), color='#e6f3ff')
+            draw = ImageDraw.Draw(base_image)
+            
+            # Draw grid lines for base map
+            for i in range(0, width, 100):
+                draw.line([i, 0, i, height], fill='#d0e7ff', width=1)
+            for i in range(0, height, 100):
+                draw.line([0, i, width, i], fill='#d0e7ff', width=1)
+        
+        # Now overlay GeoServer layers if available
+        if active_layers:
+            try:
+                workspace = active_layers[0].get('workspace', 'topp')
+                layer_names = ','.join([f"{layer.get('workspace', workspace)}:{layer.get('name')}" for layer in active_layers])
+                
+                # Build WMS GetMap request for overlays
+                wms_params = {
+                    'SERVICE': 'WMS',
+                    'VERSION': '1.1.1',
+                    'REQUEST': 'GetMap',
+                    'LAYERS': layer_names,
+                    'STYLES': '',
+                    'SRS': 'EPSG:4326',
+                    'BBOX': f"{bounds['west']},{bounds['south']},{bounds['east']},{bounds['north']}",
+                    'WIDTH': width,
+                    'HEIGHT': height,
+                    'FORMAT': 'image/png',
+                    'TRANSPARENT': 'TRUE'
+                }
+                
+                wms_url = f"{GEOSERVER_BASE_URL}/{workspace}/wms"
+                
+                response = requests.get(wms_url, params=wms_params, 
+                                      auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD), 
+                                      timeout=30)
+                
+                if response.status_code == 200 and 'image' in response.headers.get('content-type', ''):
+                    # Overlay the GeoServer layers on base map
+                    overlay_image = PILImage.open(io.BytesIO(response.content)).convert('RGBA')
+                    base_image = base_image.convert('RGBA')
+                    
+                    # Composite the images
+                    combined = PILImage.alpha_composite(base_image, overlay_image)
+                    combined = combined.convert('RGB')
+                    base_image = combined
+                    
+            except Exception as e:
+                app.logger.warning(f"WMS overlay request failed: {e}")
+        
+        # Add map annotations
+        draw = ImageDraw.Draw(base_image)
+        
+        try:
+            font = ImageFont.truetype("arial.ttf", 16)
+            small_font = ImageFont.truetype("arial.ttf", 12)
+        except:
+            font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
+        
+        # Add north arrow
+        draw.text((width-60, 20), "↑ N", fill='#e74c3c', font=font)
+        
+        # Add scale info in bottom left
+        scale_text = f"Zoom: {zoom}"
+        draw.text((20, height-30), scale_text, fill='#2c3e50', font=small_font)
+        
+        # Save the final image
+        base_image.save(temp_file.name, 'PNG')
+        return temp_file.name
+        
+    except Exception as e:
+        app.logger.error(f"Map image generation failed: {str(e)}")
+        return None
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

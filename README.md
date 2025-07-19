@@ -1,6 +1,6 @@
 # Divyadrishti - Drone Map Application
 
-A comprehensive web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers with advanced features.
+A comprehensive web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers with advanced features including PDF export functionality.
 
 ## Features
 
@@ -16,6 +16,8 @@ A comprehensive web-based GIS mapping application for the Uttarakhand Space Appl
 - **Feature Information**: Click on vector layers to get detailed attribute information
 - **Responsive Design**: Mobile-friendly interface with collapsible sidebar
 - **Legend Display**: Dynamic legend generation with opacity controls for active layers
+- **PDF Export**: Export current map view with layers and metadata to PDF format
+- **Map Image Generation**: Composite map images with base layers and GeoServer overlays
 
 ## Technology Stack
 
@@ -25,6 +27,8 @@ A comprehensive web-based GIS mapping application for the Uttarakhand Space Appl
 - **GIS Server**: GeoServer
 - **Geocoding**: OpenStreetMap Nominatim API
 - **Base Maps**: Multiple providers (Google, Esri, CartoDB)
+- **PDF Generation**: ReportLab
+- **Image Processing**: Pillow (PIL)
 
 ## Prerequisites
 
@@ -90,7 +94,7 @@ http://localhost:5000
 
 ```
 divyadrishti/
-├── app.py                 # Main Flask application with API endpoints
+├── app.py                 # Main Flask application with API endpoints and PDF export
 ├── templates/
 │   ├── index.html        # Main map interface with header and controls
 │   └── login.html        # Login page with captcha
@@ -122,12 +126,15 @@ divyadrishti/
 ### Location Services
 - `GET /api/search_location?query=<location>` - Search for locations using Nominatim
 
+### Export Services
+- `POST /api/export_pdf` - Export current map view to PDF with layers and metadata
+
 ## Key Features Overview
 
 ### Map Interface
 - **Base Layers**: Multiple base map options via dropdown selector
 - **Overlay Layers**: GeoServer WMS layers (raster and vector) with opacity control
-- **Controls**: Zoom in/out, locate user, layer toggle, search
+- **Controls**: Zoom in/out, locate user, layer toggle, search, PDF export
 - **Default Location**: Centered on Uttarakhand state
 - **Legends**: Dynamic legend generation with individual opacity sliders
 
@@ -137,6 +144,13 @@ divyadrishti/
 - **Opacity Control**: 0-100% opacity sliders for each active layer
 - **Auto-Zoom**: Automatic map extent fitting when layers are loaded
 - **Persistent State**: Layers remain active when changing base maps
+
+### PDF Export Features
+- **Map Image**: Composite image with base layer and GeoServer overlays
+- **Metadata**: Location coordinates, address, timestamp, scale information
+- **Layer Information**: Table of active layers with type and opacity
+- **Professional Layout**: A4 format with proper headers and styling
+- **Error Handling**: Graceful fallbacks for image generation failures
 
 ### Advanced Features
 - **Feature Information**: Click on vector layers to view attributes in styled popups
@@ -184,17 +198,23 @@ divyadrishti/
    - Check browser console for error messages
    - Ensure layer bounds are properly configured
 
-3. **Opacity Controls Not Working**
+3. **PDF Export Issues**
+   - Check temporary file permissions
+   - Verify ReportLab and Pillow installations
+   - Check network connectivity for base map tiles
+   - Monitor server logs for detailed error messages
+
+4. **Opacity Controls Not Working**
    - Check that layers are properly added to overlay group
    - Verify layer IDs match between legend and map layers
    - Check browser console for JavaScript errors
 
-4. **Auto-Zoom Not Working**
+5. **Auto-Zoom Not Working**
    - Verify layer bounds API endpoint is accessible
    - Check that layer has valid bounding box in GeoServer
    - Ensure layer bounds are in EPSG:4326 format
 
-5. **Login Issues**
+6. **Login Issues**
    - Verify default credentials (admin/admin)
    - Check session configuration
    - Ensure SECRET_KEY is set
@@ -220,7 +240,8 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 - **Layer Caching**: Workspace layers are cached to reduce API calls
 - **Efficient Rendering**: Layers are rendered on-demand
 - **Optimized Tiles**: Proper tile size and zoom level configuration
-- **Memory Management**: Proper cleanup of removed layers
+- **Memory Management**: Proper cleanup of removed layers and temporary files
+- **PDF Generation**: Optimized image processing and composite generation
 
 ## Browser Compatibility
 
@@ -234,7 +255,7 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly with different layer types
+4. Test thoroughly with different layer types and PDF export
 5. Submit a pull request
 
 ## License
@@ -251,3 +272,4 @@ For support and questions, contact the Uttarakhand Space Application Center deve
 - **v1.1.0**: Added multiple base maps and layer management
 - **v1.2.0**: Added opacity controls and auto-zoom features
 - **v1.3.0**: Enhanced UI/UX with legends and feature information
+- **v1.4.0**: Added PDF export functionality with map images and metadata

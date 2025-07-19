@@ -834,6 +834,9 @@ function setupUIEventListeners() {
         alert(e.message);
     });
 
+    // Export PDF
+    document.getElementById('export-pdf').addEventListener('click', exportMapToPDF);
+
     // Search Functionality
     document.getElementById('search-button').addEventListener('click', performSearch);
     document.getElementById('search-input').addEventListener('keypress', (e) => {
@@ -1342,5 +1345,128 @@ function addCompassControl() {
     });
     
     new CompassControl({ position: 'bottomleft' }).addTo(map);
+}
+
+// PDF Export functionality
+async function exportMapToPDF() {
+    const exportBtn = document.getElementById('export-pdf');
+    const originalContent = exportBtn.innerHTML;
+    
+    try {
+        // Show loading state
+        exportBtn.disabled = true;
+        exportBtn.classList.add('pdf-loading');
+        exportBtn.innerHTML = '';
+        
+        // Get current map data
+        const mapData = await captureMapData();
+        
+        // Send to backend for PDF generation
+        const response = await fetch('/api/export_pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(mapData)
+        });
+        
+        if (response.ok) {
+            // Download the PDF
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `map_export_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            throw new Error('Failed to generate PDF');
+        }
+        
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        alert('Failed to export PDF. Please try again.');
+    } finally {
+        // Restore button state
+        exportBtn.disabled = false;
+        exportBtn.classList.remove('pdf-loading');
+        exportBtn.innerHTML = originalContent;
+    }
+}
+
+// Capture current map data for PDF export
+async function captureMapData() {
+    const bounds = map.getBounds();
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    
+    // Get active layers
+    const activeLayers = [];
+    currentOverlayLayers.eachLayer(layer => {
+        if (layer._layerId) {
+            activeLayers.push({
+                id: layer._layerId,
+                name: layer._layerName,
+                workspace: layer._workspaceName,
+                type: layer._layerType,
+                opacity: layer.options.opacity
+            });
+        }
+    });
+    
+    // Get current address using reverse geocoding
+    let address = 'Location information not available';
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${center.lat}&lon=${center.lng}&zoom=10&addressdetails=1`);
+        const data = await response.json();
+        if (data && data.display_name) {
+            address = data.display_name;
+        }
+    } catch (error) {
+        console.error('Failed to get address:', error);
+    }
+    
+    // Calculate scale (approximate)
+    const scale = calculateMapScale(zoom);
+    
+    return {
+        bounds: {
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest()
+        },
+        center: {
+            lat: center.lat,
+            lng: center.lng
+        },
+        zoom: zoom,
+        scale: scale,
+        address: address,
+        activeLayers: activeLayers,
+        timestamp: new Date().toISOString()
+    };
+}
+
+// Calculate approximate map scale
+function calculateMapScale(zoom) {
+    // Approximate scale calculation for web mercator projection
+    const earthCircumference = 40075016.686; // meters
+    const mapWidth = map.getSize().x; // pixels
+    const metersPerPixel = earthCircumference * Math.cos(map.getCenter().lat * Math.PI / 180) / Math.pow(2, zoom + 8);
+    const scale = metersPerPixel * 96 / 0.0254; // Convert to scale (assuming 96 DPI)
+    
+    // Round to nice numbers
+    if (scale > 1000000) {
+        return `1:${Math.round(scale / 100000) * 100000}`;
+    } else if (scale > 100000) {
+        return `1:${Math.round(scale / 10000) * 10000}`;
+    } else if (scale > 10000) {
+        return `1:${Math.round(scale / 1000) * 1000}`;
+    } else {
+        return `1:${Math.round(scale / 100) * 100}`;
+    }
 }
 
