@@ -1,6 +1,6 @@
 # Divyadrishti - Drone Map Application
 
-A comprehensive web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers with advanced features including PDF export functionality.
+A comprehensive web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers with advanced features including PDF export functionality with visual layer color representation.
 
 ## Features
 
@@ -8,7 +8,7 @@ A comprehensive web-based GIS mapping application for the Uttarakhand Space Appl
 - **Multiple Base Maps**: OpenStreetMap, Google Satellite, Google Hybrid, Google Terrain, Esri Satellite, CartoDB variants
 - **GeoServer Integration**: Dynamic loading of raster and vector layers from GeoServer workspaces
 - **Layer Opacity Control**: Individual opacity sliders for each layer (0-100%)
-- **Auto-Zoom to Layer Bounds**: Automatic map extent adjustment when layers are loaded
+- **Smart Layer Loading**: Vector layers load without auto-zoom, raster layers auto-fit to bounds
 - **Multi-language Support**: English and Hindi language switching
 - **User Authentication**: Secure login system with captcha verification
 - **Layer Management**: Toggle visibility of different map layers with legends
@@ -16,8 +16,9 @@ A comprehensive web-based GIS mapping application for the Uttarakhand Space Appl
 - **Feature Information**: Click on vector layers to get detailed attribute information
 - **Responsive Design**: Mobile-friendly interface with collapsible sidebar
 - **Legend Display**: Dynamic legend generation with opacity controls for active layers
-- **PDF Export**: Export current map view with layers and metadata to PDF format
+- **Enhanced PDF Export**: Export current map view with layers, metadata, and visual color representation
 - **Map Image Generation**: Composite map images with base layers and GeoServer overlays
+- **Color-Coded Layer Table**: Visual color lines showing actual GeoServer style colors for vector layers
 
 ## Technology Stack
 
@@ -27,8 +28,9 @@ A comprehensive web-based GIS mapping application for the Uttarakhand Space Appl
 - **GIS Server**: GeoServer
 - **Geocoding**: OpenStreetMap Nominatim API
 - **Base Maps**: Multiple providers (Google, Esri, CartoDB)
-- **PDF Generation**: ReportLab
+- **PDF Generation**: ReportLab with custom Flowables
 - **Image Processing**: Pillow (PIL)
+- **Style Parsing**: Regular expressions for SLD color extraction
 
 ## Prerequisites
 
@@ -141,16 +143,19 @@ divyadrishti/
 ### Layer Management
 - **Workspaces**: Expandable workspace list in sidebar
 - **Layer Types**: Separate handling for raster and vector layers
+- **Smart Loading**: Vector layers maintain current map view, raster layers auto-zoom to bounds
 - **Opacity Control**: 0-100% opacity sliders for each active layer
-- **Auto-Zoom**: Automatic map extent fitting when layers are loaded
 - **Persistent State**: Layers remain active when changing base maps
+- **Color Extraction**: Automatic color detection from GeoServer SLD styles
 
-### PDF Export Features
+### Enhanced PDF Export Features
 - **Map Image**: Composite image with base layer and GeoServer overlays
 - **Metadata**: Location coordinates, address, timestamp, scale information
-- **Layer Information**: Table of active layers with type and opacity
+- **Visual Layer Table**: Enhanced table showing Layer, Type, Opacity, and Color columns
+- **Color Representation**: Actual colored lines for vector layers showing GeoServer style colors
+- **Style Integration**: Automatic extraction of fill and stroke colors from SLD styles
 - **Professional Layout**: A4 format with proper headers and styling
-- **Error Handling**: Graceful fallbacks for image generation failures
+- **Error Handling**: Graceful fallbacks for image generation and color extraction failures
 
 ### Advanced Features
 - **Feature Information**: Click on vector layers to view attributes in styled popups
@@ -158,6 +163,7 @@ divyadrishti/
 - **Responsive Design**: Adapts to different screen sizes
 - **Layer Legends**: Automatic legend retrieval from GeoServer
 - **Search Integration**: Location search with Nominatim geocoding
+- **Style Color Detection**: Extracts primary colors from GeoServer SLD styles for visual representation
 
 ### User Interface
 - **Modern Header**: Logo, title, user info, and language switcher
@@ -239,8 +245,8 @@ app.run(debug=True, host='0.0.0.0', port=5000)
 
 - **Layer Caching**: Workspace layers are cached to reduce API calls
 - **Efficient Rendering**: Layers are rendered on-demand
-- **Optimized Tiles**: Proper tile size and zoom level configuration
-- **Memory Management**: Proper cleanup of removed layers and temporary files
+- **Smart Loading**: Vector layers load without changing map view for better user experience
+- **Color Caching**: Layer style colors are extracted once and cached
 - **PDF Generation**: Optimized image processing and composite generation
 
 ## Browser Compatibility
@@ -273,3 +279,57 @@ For support and questions, contact the Uttarakhand Space Application Center deve
 - **v1.2.0**: Added opacity controls and auto-zoom features
 - **v1.3.0**: Enhanced UI/UX with legends and feature information
 - **v1.4.0**: Added PDF export functionality with map images and metadata
+- **v1.5.0**: Enhanced PDF export with visual color representation and smart vector layer loading
+
+## Setting Up Layer Colors in GeoServer
+
+To ensure vector layers show colored lines instead of "Default" in PDF exports:
+
+### Method 1: GeoServer Web Interface
+1. Access GeoServer Admin at `http://172.16.0.145:8080/geoserver/web`
+2. Navigate to "Styles" → "Add a new style"
+3. Create SLD with color definitions:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld">
+  <NamedLayer>
+    <Name>your_layer_name</Name>
+    <UserStyle>
+      <FeatureTypeStyle>
+        <Rule>
+          <PolygonSymbolizer>
+            <Fill>
+              <CssParameter name="fill">#FF6B35</CssParameter>
+            </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#D2691E</CssParameter>
+              <CssParameter name="stroke-width">2</CssParameter>
+            </Stroke>
+          </PolygonSymbolizer>
+        </Rule>
+      </FeatureTypeStyle>
+    </UserStyle>
+  </NamedLayer>
+</StyledLayerDescriptor>
+```
+
+4. Apply the style to your layer in "Layers" → "Publishing" tab
+
+### Recommended Layer Colors
+- **Buildings**: `#FF6B35` (Orange)
+- **Roads**: `#8B4513` (Brown)
+- **Properties**: `#4169E1` (Royal Blue)
+- **Open_Space**: `#32CD32` (Lime Green)
+- **Water Bodies**: `#1E90FF` (Dodger Blue)
+
+## Troubleshooting
+
+### PDF Export Issues
+- **Color Not Showing**: Ensure vector layers have custom SLD styles with defined fill/stroke colors
+- **"Default" in Color Column**: Create custom styles in GeoServer with specific color definitions
+- **Color Extraction Failed**: Check that SLD contains `<CssParameter name="fill">` or `<CssParameter name="stroke">` elements
+
+### Layer Loading Issues
+- **Vector Layers Auto-Zooming**: Fixed - vector layers now maintain current map view
+- **Raster Layers Not Fitting**: Raster layers automatically zoom to layer bounds as intended

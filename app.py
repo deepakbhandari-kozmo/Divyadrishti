@@ -429,7 +429,7 @@ def export_pdf():
         story.append(info_table)
         story.append(Spacer(1, 10))
         
-        # Add active layers legend (simplified without images)
+        # Add active layers legend with color information
         active_layers = data.get('activeLayers', [])
         
         if active_layers:
@@ -437,14 +437,15 @@ def export_pdf():
             story.append(legend_title)
             story.append(Spacer(1, 5))
             
-            # Simplified table structure without legend images
-            legend_data = [['Layer', 'Type', 'Opacity']]
+            # Enhanced table structure with color column
+            legend_data = [['Layer', 'Type', 'Opacity', 'Color']]
             for layer in active_layers[:8]:  # Limit to 8 layers to fit on page
-                layer_name = str(layer.get('name', 'Unknown'))  # Convert to string
+                layer_name = str(layer.get('name', 'Unknown'))
+                layer_type = str(layer.get('type', 'Unknown')).title()
+                workspace = str(layer.get('workspace', 'topp'))
                 
                 # Safely truncate layer name
                 display_name = layer_name[:20] + '...' if len(layer_name) > 20 else layer_name
-                layer_type = str(layer.get('type', 'Unknown')).title()
                 opacity_value = layer.get('opacity', 0.8)
                 
                 # Ensure opacity is a number
@@ -453,19 +454,38 @@ def export_pdf():
                 except (ValueError, TypeError):
                     opacity_percent = "80%"
                 
+                # Get color information for vector layers
+                color_element = "N/A"
+                if layer_type.lower() == 'vector':
+                    try:
+                        color_hex = get_layer_style_color(workspace, layer_name)
+                        if color_hex.startswith('#') and len(color_hex) == 7:
+                            # Create a colored line element
+                            color_element = create_color_line(color_hex)
+                        else:
+                            color_element = color_hex  # "Default" or "Unknown"
+                    except Exception as e:
+                        app.logger.warning(f"Could not get color for layer {layer_name}: {e}")
+                        color_element = "Unknown"
+                
                 legend_data.append([
                     display_name,
                     layer_type,
-                    opacity_percent
+                    opacity_percent,
+                    color_element
                 ])
             
-            legend_table = Table(legend_data, colWidths=[200, 100, 80])
+            # Create table with adjusted column widths for color column
+            legend_table = Table(legend_data, colWidths=[120, 60, 60, 80])
             legend_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e9ecef')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (3, 1), (3, -1), 'CENTER'),  # Center align color column
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
                 ('FONTSIZE', (0, 0), (-1, -1), 9),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e9ecef')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 5),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 5),
@@ -602,6 +622,108 @@ def generate_map_image(data):
     except Exception as e:
         app.logger.error(f"Map image generation failed: {str(e)}")
         return None
+
+def get_layer_style_color(workspace, layer_name):
+    """
+    Get the primary color used in a layer's style from GeoServer
+    """
+    try:
+        # Get the layer's default style
+        style_url = f"{GEOSERVER_BASE_URL}/rest/layers/{workspace}:{layer_name}.json"
+        
+        response = requests.get(style_url, auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD), timeout=10)
+        if not response.ok:
+            return "Unknown"
+        
+        layer_info = response.json()
+        default_style = layer_info.get('layer', {}).get('defaultStyle', {}).get('name', '')
+        
+        if not default_style:
+            return "Default"
+        
+        # Get the style definition
+        style_def_url = f"{GEOSERVER_BASE_URL}/rest/styles/{default_style}.sld"
+        
+        style_response = requests.get(style_def_url, auth=(GEOSERVER_USERNAME, GEOSERVER_PASSWORD), timeout=10)
+        if not style_response.ok:
+            return "Default"
+        
+        sld_content = style_response.text
+        
+        # Parse SLD to extract color information
+        color = extract_color_from_sld(sld_content)
+        return color
+        
+    except Exception as e:
+        app.logger.warning(f"Error getting style color for {workspace}:{layer_name}: {e}")
+        return "Unknown"
+
+def extract_color_from_sld(sld_content):
+    """
+    Extract primary color from SLD content
+    """
+    import re
+    
+    # Look for common color patterns in SLD
+    # Check for stroke color (lines/polygons)
+    stroke_match = re.search(r'<CssParameter name="stroke"[^>]*>([^<]+)</CssParameter>', sld_content, re.IGNORECASE)
+    if stroke_match:
+        color = stroke_match.group(1).strip()
+        if color.startswith('#'):
+            return color.upper()
+    
+    # Check for fill color (polygons)
+    fill_match = re.search(r'<CssParameter name="fill"[^>]*>([^<]+)</CssParameter>', sld_content, re.IGNORECASE)
+    if fill_match:
+        color = fill_match.group(1).strip()
+        if color.startswith('#'):
+            return color.upper()
+    
+    # Check for stroke parameter in different format
+    stroke_param = re.search(r'stroke:\s*([#\w]+)', sld_content, re.IGNORECASE)
+    if stroke_param:
+        color = stroke_param.group(1).strip()
+        if color.startswith('#'):
+            return color.upper()
+    
+    # Check for fill parameter in different format
+    fill_param = re.search(r'fill:\s*([#\w]+)', sld_content, re.IGNORECASE)
+    if fill_param:
+        color = fill_param.group(1).strip()
+        if color.startswith('#'):
+            return color.upper()
+    
+    return "Default"
+
+def create_color_line(color_hex):
+    """
+    Create a colored line element for PDF table
+    """
+    from reportlab.platypus import Flowable
+    from reportlab.lib import colors as reportlab_colors
+    
+    class ColorLine(Flowable):
+        def __init__(self, color_hex, width=60, height=8):
+            self.color_hex = color_hex
+            self.width = width
+            self.height = height
+            
+        def draw(self):
+            try:
+                # Convert hex color to ReportLab color
+                color = reportlab_colors.HexColor(self.color_hex)
+                self.canv.setFillColor(color)
+                self.canv.setStrokeColor(color)
+                
+                # Draw a thick line (rectangle)
+                self.canv.rect(5, 2, self.width - 10, self.height - 4, fill=1, stroke=0)
+                
+            except Exception as e:
+                # Fallback to drawing text if color parsing fails
+                self.canv.setFillColor(reportlab_colors.black)
+                self.canv.drawString(5, 2, self.color_hex)
+    
+    return ColorLine(color_hex)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -649,8 +649,7 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
         // Add click event listener for GetFeatureInfo
         addVectorLayerClickHandler(workspaceName, layerName, fullLayerName);
         
-        // Auto-zoom to layer bounds
-        fitMapToLayerBounds(fullLayerName);
+        // DO NOT auto-zoom for vector layers - keep current map view
     } else {
         // Remove the vector layer from overlays
         let layerRemoved = false;
