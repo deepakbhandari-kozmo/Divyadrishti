@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 import os
 import requests
+<<<<<<< HEAD
 import time
 from datetime import datetime
 from functools import wraps
@@ -11,6 +12,9 @@ from firebase_config import (
     add_user_activity, get_user_by_email, get_user_by_username, test_firebase_connection
 )
 from google.cloud import firestore
+=======
+from datetime import datetime
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
@@ -24,6 +28,7 @@ app = Flask(__name__)
 
 # --- Configuration ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_secret_key_here_change_in_production')
+<<<<<<< HEAD
 print(f"Flask secret key configured: {app.config['SECRET_KEY'][:10]}...")
 
 # Configure session settings for better reliability
@@ -154,12 +159,25 @@ def get_all_users():
         print(f"❌ Full traceback: {traceback.format_exc()}")
         return []
 
+=======
+
+GEOSERVER_BASE_URL = "http://172.16.0.145:8080/geoserver"
+GEOSERVER_USERNAME = os.environ.get('GEOSERVER_USERNAME', 'admin')
+GEOSERVER_PASSWORD = os.environ.get('GEOSERVER_PASSWORD', 'geoserver')
+
+# Default login credentials
+DEFAULT_CREDENTIALS = {
+    'admin': 'admin'
+}
+
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 # --- Authentication Routes ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return render_template('login.html')
+<<<<<<< HEAD
 
     # Handle both JSON and form data
     if request.is_json:
@@ -274,12 +292,36 @@ def login():
     if request.is_json:
         return jsonify({'success': False, 'message': error_msg}), 401
     return render_template('login.html', error=error_msg)
+=======
+    
+    username = request.form.get('username')
+    password = request.form.get('password')
+    captcha = request.form.get('captcha')
+    
+    # Simple captcha validation (you can enhance this)
+    expected_captcha = request.form.get('expected_captcha', '').upper()
+    
+    if not username or not password or not captcha:
+        return render_template('login.html', error='All fields are required')
+    
+    if captcha.upper() != expected_captcha:
+        return render_template('login.html', error='Invalid captcha')
+    
+    # Check credentials
+    if username in DEFAULT_CREDENTIALS and DEFAULT_CREDENTIALS[username] == password:
+        session['logged_in'] = True
+        session['username'] = username
+        return redirect(url_for('index'))
+    else:
+        return render_template('login.html', error='Invalid username or password')
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
+<<<<<<< HEAD
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
@@ -404,6 +446,8 @@ def privacy_policy():
 def favicon():
     return send_file('static/images/logo.png', mimetype='image/png')
 
+=======
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 # --- Protected Routes ---
 
 def login_required(f):
@@ -415,6 +459,7 @@ def login_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
+<<<<<<< HEAD
 def admin_required(f):
     """Decorator to require admin role for routes"""
     @wraps(f)
@@ -436,11 +481,14 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+=======
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 @app.route('/')
 @login_required
 def index():
     return render_template('index.html')
 
+<<<<<<< HEAD
 @app.route('/test-session')
 def test_session():
     """Test route to check session data"""
@@ -1134,6 +1182,8 @@ def update_settings():
         print(f"Error updating settings: {e}")
         return jsonify({'success': False, 'message': 'Failed to update settings'}), 500
 
+=======
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 @app.route('/api/search_location')
 @login_required
 def search_location():
@@ -1783,6 +1833,7 @@ def create_color_line(color_hex):
     
     return ColorLine(color_hex)
 
+<<<<<<< HEAD
 # API Health endpoint for analytics monitoring
 @app.route('/api/health')
 def api_health():
@@ -1850,5 +1901,7 @@ def track_analytics():
             'message': str(e)
         }), 400
 
+=======
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

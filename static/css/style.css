@@ -546,6 +546,7 @@ body.sidebar-collapsed #map {
     gap: 20px;
 }
 
+<<<<<<< HEAD
 .nav-links {
     display: flex;
     gap: 1rem;
@@ -568,6 +569,8 @@ body.sidebar-collapsed #map {
     color: white;
 }
 
+=======
+>>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 .user-info {
     display: flex;
     align-items: center;
