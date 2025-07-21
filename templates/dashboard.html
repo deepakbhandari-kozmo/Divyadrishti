@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Drone Application & Research Center</title>
+
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+
+    <!-- Load theme immediately to prevent flash -->
+    <script src="{{ url_for('static', filename='js/theme-loader.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <div id="app-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="header-logo">
+                </div>
+                <div class="title-container">
+                    <h1>Admin Dashboard</h1>
+                    <h2>Drone Application & Research Center</h2>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="nav-links">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-map"></i> Map View
+                    </a>
+                    <a href="/dashboard" class="nav-link active">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="/profile" class="nav-link">
+                        <i class="fas fa-user-circle"></i> Profile
+                    </a>
+                </div>
+                <div class="user-info">
+                    <span class="welcome-text">Welcome, {{ session.username }}</span>
+                    <a href="/logout" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-container">
+
+        <!-- Enhanced System Status Bar - Full Width -->
+        <div class="system-status-bar">
+            <div class="status-item">
+                <div class="status-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="status-content">
+                    <span class="status-value">2</span>
+                    <span class="status-label">Active Users</span>
+                    <span class="status-change negative">-50%</span>
+                    <div class="status-indicator">
+                        <span class="indicator-dot live"></span>
+                        <span class="indicator-text">Live</span>
+                    </div>
+                    <span class="status-stability">Stable</span>
+                </div>
+            </div>
+
+            <div class="status-item">
+                <div class="status-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="status-content">
+                    <span class="status-value">341ms</span>
+                    <span class="status-label">API Response</span>
+                    <span class="status-change positive">-12%</span>
+                    <div class="status-indicator">
+                        <span class="indicator-dot live"></span>
+                        <span class="indicator-text">Live</span>
+                    </div>
+                    <span class="status-stability">Stable</span>
+                </div>
+            </div>
+
+            <div class="status-item">
+                <div class="status-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="status-content">
+                    <span class="status-value">98.3%</span>
+                    <span class="status-label">Uptime</span>
+                    <span class="status-change positive">+0.1%</span>
+                    <div class="status-indicator">
+                        <span class="indicator-dot live"></span>
+                        <span class="indicator-text">Live</span>
+                    </div>
+                    <span class="status-stability">Stable</span>
+                </div>
+            </div>
+
+            <div class="status-item">
+                <div class="status-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="status-content">
+                    <span class="status-value">33%</span>
+                    <span class="status-label">Engagement</span>
+                    <span class="status-change positive">+5%</span>
+                    <div class="status-indicator">
+                        <span class="indicator-dot live"></span>
+                        <span class="indicator-text">Live</span>
+                    </div>
+                    <span class="status-stability">Stable</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional System Details Bar -->
+        <div class="system-details-bar">
+            <div class="detail-group">
+                <span class="detail-label">API:</span>
+                <span class="detail-status online">
+                    <span class="status-dot online"></span>
+                    Online
+                </span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Database:</span>
+                <span class="detail-status online">
+                    <span class="status-dot online"></span>
+                    Connected
+                </span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Frontend:</span>
+                <span class="detail-status critical">
+                    <span class="status-dot critical"></span>
+                    Critical
+                </span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Analytics:</span>
+                <span class="detail-status online">
+                    <span class="status-dot online"></span>
+                    Active
+                </span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Notifications:</span>
+                <span class="detail-status online">
+                    <span class="status-dot online"></span>
+                    Active
+                </span>
+            </div>
+            <div class="detail-group">
+                <span class="detail-label">Last Updated:</span>
+                <span class="detail-time">12:26:29 AM</span>
+            </div>
+            <div class="detail-group">
+                <button class="refresh-btn" onclick="refreshSystemStatus()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="storage-usage">Loading...</h3>
+                    <p>Storage Usage</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="active-users">Loading...</h3>
+                    <p>Active Users</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="total-projects">Loading...</h3>
+                    <p>Total Projects</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="alert-count">Loading...</h3>
+                    <p>Active Alerts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- System Monitoring - Full Width -->
+            <div class="dashboard-card full-width storage-monitoring">
+                <div class="card-header">
+                    <h3><i class="fas fa-desktop"></i> System Performance Monitor</h3>
+                    <div class="monitor-controls">
+                        <span class="update-frequency">Update: <span id="update-timer">1s</span></span>
+                        <button class="refresh-btn" onclick="refreshStorageData()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="fullscreen-btn" onclick="toggleFullscreen()">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <!-- Real-time Performance Metrics -->
+                    <div class="performance-grid">
+                        <!-- CPU Monitor -->
+                        <div class="performance-widget">
+                            <div class="widget-header">
+                                <h4><i class="fas fa-microchip"></i> CPU</h4>
+                                <span class="current-value" id="cpu-current">45%</span>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="cpuMiniChart" width="200" height="60"></canvas>
+                            </div>
+                            <div class="widget-details">
+                                <div class="detail-item">
+                                    <span>Speed:</span>
+                                    <span id="cpu-speed">3.2 GHz</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Cores:</span>
+                                    <span id="cpu-cores">8</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Processes:</span>
+                                    <span id="cpu-processes">247</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Monitor -->
+                        <div class="performance-widget">
+                            <div class="widget-header">
+                                <h4><i class="fas fa-memory"></i> Memory</h4>
+                                <span class="current-value" id="memory-current">14.7GB / 31.6GB</span>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="memoryMiniChart" width="200" height="60"></canvas>
+                            </div>
+                            <div class="widget-details">
+                                <div class="detail-item">
+                                    <span>Available:</span>
+                                    <span id="memory-available">16.9 GB</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Cached:</span>
+                                    <span id="memory-cached">8.2 GB</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>In Use:</span>
+                                    <span id="memory-used">14.7 GB</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Disk Monitor -->
+                        <div class="performance-widget">
+                            <div class="widget-header">
+                                <h4><i class="fas fa-hdd"></i> Disk</h4>
+                                <span class="current-value" id="disk-current">211.7GB / 317.8GB</span>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="diskMiniChart" width="200" height="60"></canvas>
+                            </div>
+                            <div class="widget-details">
+                                <div class="detail-item">
+                                    <span>Read:</span>
+                                    <span id="disk-read">45 MB/s</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Write:</span>
+                                    <span id="disk-write">23 MB/s</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Active Time:</span>
+                                    <span id="disk-active">12%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Network Monitor -->
+                        <div class="performance-widget">
+                            <div class="widget-header">
+                                <h4><i class="fas fa-wifi"></i> Network</h4>
+                                <span class="current-value" id="network-current">12 MB/s</span>
+                            </div>
+                            <div class="mini-chart-container">
+                                <canvas id="networkMiniChart" width="200" height="60"></canvas>
+                            </div>
+                            <div class="widget-details">
+                                <div class="detail-item">
+                                    <span>Download:</span>
+                                    <span id="network-download">8.5 MB/s</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Upload:</span>
+                                    <span id="network-upload">3.5 MB/s</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Latency:</span>
+                                    <span id="network-latency">12ms</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Performance Chart -->
+                    <div class="main-chart-container">
+                        <div class="chart-header">
+                            <h4>Performance History (Last 60 seconds)</h4>
+                            <div class="chart-legend">
+                                <span class="legend-item cpu"><i class="fas fa-circle"></i> CPU</span>
+                                <span class="legend-item memory"><i class="fas fa-circle"></i> Memory</span>
+                                <span class="legend-item disk"><i class="fas fa-circle"></i> Disk</span>
+                                <span class="legend-item network"><i class="fas fa-circle"></i> Network</span>
+                            </div>
+                        </div>
+                        <canvas id="performanceChart" width="800" height="300"></canvas>
+                    </div>
+
+
+                </div>
+            </div>
+
+
+
+            <!-- User Activity & Performance Analytics Card -->
+            <div class="dashboard-card full-width analytics-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> User Activity & Performance Analytics</h3>
+                </div>
+
+                <!-- Full-width horizontal controls bar -->
+                <div class="analytics-controls-bar">
+                    <div class="time-range-selector">
+                        <button class="time-range-btn active" data-range="24h">24h</button>
+                        <button class="time-range-btn" data-range="7d">7d</button>
+                        <button class="time-range-btn" data-range="30d">30d</button>
+                        <button class="time-range-btn" data-range="custom">Custom</button>
+                    </div>
+                    <div class="analytics-actions">
+                        <button class="analytics-action-btn" onclick="exportAnalytics()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="analytics-action-btn" onclick="refreshAnalytics()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-content">
+
+                    <!-- Quick Stats Row -->
+                    <div class="quick-stats-row">
+                        <div class="quick-stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="active-users-count">0</div>
+                                <div class="stat-label">Active Users</div>
+                                <div class="stat-change positive" id="users-change">+12%</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="avg-load-time">0ms</div>
+                                <div class="stat-label">Avg Load Time</div>
+                                <div class="stat-change negative" id="load-time-change">+5%</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="uptime-percentage">99.9%</div>
+                                <div class="stat-label">Uptime</div>
+                                <div class="stat-change positive" id="uptime-change">+0.1%</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat-item">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="error-count">0</div>
+                                <div class="stat-label">Errors (24h)</div>
+                                <div class="stat-change positive" id="errors-change">-15%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h4>User Activity</h4>
+                                <div class="chart-legend">
+                                    <span class="legend-item"><span class="legend-color active-users"></span>Active Users</span>
+                                    <span class="legend-item"><span class="legend-color page-views"></span>Page Views</span>
+                                </div>
+                            </div>
+                            <canvas id="user-activity-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h4>Performance Metrics</h4>
+                                <div class="chart-legend">
+                                    <span class="legend-item"><span class="legend-color load-time"></span>Load Time</span>
+                                    <span class="legend-item"><span class="legend-color response-time"></span>API Response</span>
+                                </div>
+                            </div>
+                            <canvas id="performance-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h4>Device Types</h4>
+                            </div>
+                            <canvas id="device-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h4>Top Pages</h4>
+                            </div>
+                            <canvas id="pages-chart"></canvas>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Performance and Alerts Side by Side -->
+            <div class="two-column-container">
+                <!-- Project Performance Card (placeholder) -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-tasks"></i> Project Performance</h3>
+                        <button class="refresh-btn" onclick="refreshProjectData()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <div class="project-summary">
+                            <canvas id="projectChart" width="400" height="200"></canvas>
+                        </div>
+                        <div class="project-list" id="project-list">
+                            <!-- Projects will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts and Notifications Card -->
+                <div class="dashboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bell"></i> Alerts & Notifications</h3>
+                </div>
+                <div class="notification-controls-row">
+                    <button class="notification-control-btn" onclick="clearAllAlerts()">
+                        <i class="fas fa-check"></i> Mark Read
+                    </button>
+                    <button class="notification-control-btn" onclick="deleteReadNotifications()">
+                        <i class="fas fa-trash"></i> Delete Read
+                    </button>
+                    <button class="notification-control-btn" onclick="showAddNotificationModal()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                    <button class="notification-control-btn" onclick="testFirebaseConnection()">
+                        <i class="fas fa-plug"></i> Test
+                    </button>
+                    <button class="notification-control-btn" onclick="refreshNotifications()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-content">
+                    <!-- Notification Filters -->
+                    <div class="notification-filters">
+                        <div class="filter-group">
+                            <label>Filter by Type:</label>
+                            <select id="filter-type" onchange="filterNotifications()">
+                                <option value="all">All Types</option>
+                                <option value="info">Info</option>
+                                <option value="success">Success</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Filter by Status:</label>
+                            <select id="filter-status" onchange="filterNotifications()">
+                                <option value="all">All</option>
+                                <option value="unread">Unread Only</option>
+                                <option value="read">Read Only</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Filter by Priority:</label>
+                            <select id="filter-priority" onchange="filterNotifications()">
+                                <option value="all">All Priorities</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notification Stats -->
+                    <div class="notification-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value" id="total-notifications">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Unread:</span>
+                            <span class="stat-value" id="unread-notifications">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Critical:</span>
+                            <span class="stat-value critical" id="critical-notifications">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">System:</span>
+                            <span class="stat-value" id="system-status">
+                                <i class="fas fa-circle"></i> Checking...
+                            </span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Auto-Monitor:</span>
+                            <span class="stat-value" id="monitor-status">
+                                <i class="fas fa-circle text-success"></i> Active
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="alerts-container" id="alerts-container">
+                        <!-- Alerts will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Management - Full Width -->
+            <div class="dashboard-card full-width">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-cog"></i> User Management & Role Administration</h3>
+                    <div class="header-actions">
+                        <button class="add-user-btn" onclick="showAddUserModal()">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                        <span class="pending-count" id="pending-count">0 Pending</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="users-table-container">
+                        <table class="users-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr>
+                                    <td colspan="6" class="loading-message">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading users...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pending-users-container" id="pending-users-container">
+                        <!-- Pending users will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            </div> <!-- End two-column-container -->
+
+        </div>
+    </div>
+
+    <!-- Event Triggers Modal -->
+    <div id="event-triggers-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Test Event Triggers</h3>
+                <span class="close" onclick="closeEventTriggersModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="trigger-section">
+                    <h4><i class="fas fa-users"></i> User Events</h4>
+                    <div class="trigger-buttons">
+                        <button class="trigger-btn" onclick="triggerUserRegistration()">
+                            <i class="fas fa-user-plus"></i> New User Registration
+                        </button>
+                        <button class="trigger-btn" onclick="triggerLoginFailed()">
+                            <i class="fas fa-times-circle"></i> Failed Login
+                        </button>
+                        <button class="trigger-btn" onclick="triggerAdminLogin()">
+                            <i class="fas fa-sign-in-alt"></i> Admin Login
+                        </button>
+                        <button class="trigger-btn" onclick="triggerRoleChange()">
+                            <i class="fas fa-user-cog"></i> Role Change
+                        </button>
+                    </div>
+                </div>
+
+                <div class="trigger-section">
+                    <h4><i class="fas fa-shield-alt"></i> Security Events</h4>
+                    <div class="trigger-buttons">
+                        <button class="trigger-btn" onclick="triggerUnauthorizedAccess()">
+                            <i class="fas fa-ban"></i> Unauthorized Access
+                        </button>
+                        <button class="trigger-btn" onclick="triggerSuspiciousActivity()">
+                            <i class="fas fa-exclamation-triangle"></i> Suspicious Activity
+                        </button>
+                    </div>
+                </div>
+
+                <div class="trigger-section">
+                    <h4><i class="fas fa-server"></i> System Events</h4>
+                    <div class="trigger-buttons">
+                        <button class="trigger-btn" onclick="triggerHighCPU()">
+                            <i class="fas fa-microchip"></i> High CPU Usage
+                        </button>
+                        <button class="trigger-btn" onclick="triggerLowDisk()">
+                            <i class="fas fa-hdd"></i> Low Disk Space
+                        </button>
+                        <button class="trigger-btn" onclick="triggerBackupComplete()">
+                            <i class="fas fa-check-circle"></i> Backup Complete
+                        </button>
+                        <button class="trigger-btn" onclick="triggerMaintenanceAlert()">
+                            <i class="fas fa-tools"></i> Maintenance Alert
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeEventTriggersModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Notification Modal -->
+    <div id="notification-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Notification</h3>
+                <span class="close" onclick="closeNotificationModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="notification-form">
+                    <div class="form-group">
+                        <label for="notification-type">Type:</label>
+                        <select id="notification-type" required>
+                            <option value="info">Info</option>
+                            <option value="success">Success</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notification-priority">Priority:</label>
+                        <select id="notification-priority" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notification-category">Category:</label>
+                        <select id="notification-category" required>
+                            <option value="system">System</option>
+                            <option value="user">User</option>
+                            <option value="security">Security</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notification-title">Title:</label>
+                        <input type="text" id="notification-title" required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="notification-message">Message:</label>
+                        <textarea id="notification-message" required rows="3" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="notification-action-url">Action URL (optional):</label>
+                        <input type="url" id="notification-action-url" placeholder="https://example.com/action">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeNotificationModal()">Cancel</button>
+                <button type="button" class="btn-primary" onclick="createNotification()">Create Notification</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Edit User</h3>
+                <span class="close" onclick="closeUserModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="user-form">
+                    <input type="hidden" id="user-id">
+                    <div class="form-group">
+                        <label for="user-username">Username:</label>
+                        <input type="text" id="user-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Email:</label>
+                        <input type="email" id="user-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-fullname">Full Name:</label>
+                        <input type="text" id="user-fullname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">Password:</label>
+                        <input type="password" id="user-password" placeholder="Leave blank to keep current password">
+                        <small>Required for new users, optional for existing users</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Role:</label>
+                        <select id="user-role" required>
+                            <option value="user">User</option>
+                            <option value="analyst">Analyst</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-status">Status:</label>
+                        <select id="user-status" required>
+                            <option value="approved">Approved</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeUserModal()">Cancel</button>
+                <button type="button" class="btn-primary" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/system-monitor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification-triggers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/system-health.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auto-notifications.js') }}"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Initialization Manager (MUST BE FIRST) -->
+    <script src="{{ url_for('static', filename='js/init-manager.js') }}"></script>
+
+    <!-- Real Analytics System -->
+    <script src="{{ url_for('static', filename='js/real-analytics.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/real-analytics-processor.js') }}"></script>
+
+    <!-- Enhanced Performance Monitoring -->
+    <script src="{{ url_for('static', filename='js/performance-monitor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/error-tracker.js') }}"></script>
+
+    <!-- Advanced User Interaction Analytics -->
+    <script src="{{ url_for('static', filename='js/interaction-tracker.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/journey-analyzer.js') }}"></script>
+
+    <!-- Analytics Dashboard -->
+    <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+
+    <!-- Toast Notifications -->
+    <script src="{{ url_for('static', filename='js/toast-notifications.js') }}"></script>
+
+    <!-- Real-time Dashboard Integration -->
+    <script src="{{ url_for('static', filename='js/realtime-dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/system-status-monitor.js') }}"></script>
+
+    <!-- System Status Functions -->
+    <script>
+        // System status refresh function
+        function refreshSystemStatus() {
+            console.log('🔄 Refreshing system status...');
+
+            // Show loading state
+            const refreshBtn = document.querySelector('.refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshBtn.disabled = true;
+            }
+
+            // Simulate refresh (in real app, this would fetch from API)
+            setTimeout(() => {
+                if (refreshBtn) {
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                    refreshBtn.disabled = false;
+                }
+
+                // Update timestamp
+                const timeElement = document.querySelector('.detail-time');
+                if (timeElement) {
+                    timeElement.textContent = new Date().toLocaleTimeString();
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast('System status refreshed!', 'success');
+                }
+            }, 2000);
+        }
+
+        // User Management Functions are handled by dashboard.js
+
+        // Test function to debug user loading
+        async function testUserLoading() {
+            console.log('🔍 Testing user loading...');
+
+            try {
+                // Test without admin requirement
+                console.log('🔍 Testing /api/test/users...');
+                const testResponse = await fetch('/api/test/users');
+                const testData = await testResponse.json();
+                console.log('🔍 Test response:', testData);
+
+                // Test with admin requirement
+                console.log('🔍 Testing /api/dashboard/users...');
+                const adminResponse = await fetch('/api/dashboard/users');
+                console.log('🔍 Admin response status:', adminResponse.status);
+
+                if (adminResponse.ok) {
+                    const adminData = await adminResponse.json();
+                    console.log('🔍 Admin response data:', adminData);
+                } else {
+                    const errorText = await adminResponse.text();
+                    console.log('🔍 Admin response error:', errorText);
+                }
+
+            } catch (error) {
+                console.error('🔍 Test error:', error);
+            }
+        }
+
+        // Auto-run test after page loads
+        setTimeout(testUserLoading, 2000);
+    </script>
+</body>
+</html>

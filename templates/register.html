@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Drone Application & Research Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <div id="app-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="header-logo">
+                </div>
+                <div class="title-container">
+                    <h1>Drone Application & Research Center</h1>
+                    <h2>Uttarakhand Space Application Center</h2>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="nav-links">
+                    <a href="/login" class="nav-link">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="/register" class="nav-link active">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                </div>
+                <div class="language-switch">
+                    <button id="lang-en" class="lang-btn active">English</button>
+                    <button id="lang-hi" class="lang-btn">हिंदी</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Container -->
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
+                <h1 class="app-name">Create Account</h1>
+                <p class="app-slogan">Join the Drone Mapping Community</p>
+            </div>
+            
+            <!-- Success/Error Messages -->
+            {% if success %}
+            <div class="message success-message">
+                <i class="fas fa-check-circle"></i>
+                {{ success }}
+            </div>
+            {% endif %}
+            
+            {% if error %}
+            <div class="message error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <form id="register-form" class="register-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="full_name">Full Name *</label>
+                        <div class="input-container">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <div class="input-container">
+                            <i class="fas fa-at input-icon"></i>
+                            <input type="text" id="username" name="username" required placeholder="Choose a username">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <div class="input-container">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" name="password" required placeholder="Create a password">
+                            <i class="fas fa-eye toggle-password" id="toggle-password"></i>
+                        </div>
+                        <div class="password-strength" id="password-strength"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password *</label>
+                        <div class="input-container">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
+                            <i class="fas fa-eye toggle-password" id="toggle-confirm-password"></i>
+                        </div>
+                        <div class="password-match" id="password-match"></div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="organization">Organization</label>
+                        <div class="input-container">
+                            <i class="fas fa-building input-icon"></i>
+                            <input type="text" id="organization" name="organization" placeholder="Your organization (optional)">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-container">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input type="tel" id="phone" name="phone" placeholder="Your phone number (optional)">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="captcha">Security Code *</label>
+                    <div class="captcha-container">
+                        <div class="captcha-display" id="captcha-display"></div>
+                        <button type="button" class="captcha-refresh" id="captcha-refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="input-container">
+                        <i class="fas fa-shield-alt input-icon"></i>
+                        <input type="text" id="captcha" name="captcha" required placeholder="Enter the code above">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <label for="terms" class="checkbox-label">
+                            I agree to the <a href="/terms" target="_blank" class="terms-link">Terms of Service</a> and <a href="/privacy" target="_blank" class="privacy-link">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="register-btn">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="register-footer">
+                <p class="login-link">
+                    Already have an account? <a href="/login">Sign in here</a>
+                </p>
+                <div class="approval-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Account registration requires admin approval. You will be notified once your account is approved.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>
