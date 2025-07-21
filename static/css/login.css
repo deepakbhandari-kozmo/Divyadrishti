@@ -86,7 +86,6 @@ body::before {
 .header-right {
     display: flex;
     align-items: center;
-<<<<<<< HEAD
     gap: 2rem;
 }
 
@@ -110,8 +109,6 @@ body::before {
 .nav-link:hover, .nav-link.active {
     background: #3498db;
     color: white;
-=======
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 }
 
 .language-switch {
@@ -265,52 +262,7 @@ body::before {
     color: #333;
 }
 
-<<<<<<< HEAD
 
-=======
-/* User Type Switch */
-.user-type-label {
-    margin-bottom: 5px;
-}
-
-.user-type-switch {
-    display: flex;
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 5px;
-    gap: 5px;
-}
-
-.user-type-switch input[type="radio"] {
-    display: none;
-}
-
-.switch-option {
-    flex: 1;
-    padding: 12px 20px;
-    text-align: center;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 500;
-    color: #666;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.switch-option:hover {
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
-}
-
-.user-type-switch input[type="radio"]:checked + .switch-option {
-    background: #667eea;
-    color: white;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 
 /* Login Button */
 .login-btn {
@@ -345,7 +297,6 @@ body::before {
     text-align: center;
 }
 
-<<<<<<< HEAD
 
 
 .register-link {
@@ -374,19 +325,6 @@ body::before {
 .register-link small {
     color: #7f8c8d;
     font-size: 0.8rem;
-=======
-.demo-credentials {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 10px;
-    font-size: 14px;
-    color: #666;
-    border-left: 4px solid #667eea;
-}
-
-.demo-credentials strong {
-    color: #333;
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 }
 
 /* Captcha Styles */
@@ -490,13 +428,6 @@ body::before {
         padding: 25px 20px;
     }
     
-<<<<<<< HEAD
 
-=======
-    .switch-option {
-        padding: 10px 15px;
-        font-size: 14px;
-    }
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
 }
 

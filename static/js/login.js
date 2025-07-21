@@ -44,10 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-<<<<<<< HEAD
-=======
-        const userType = document.querySelector('input[name="user_type"]:checked').value;
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
         const captcha = captchaInput.value.toUpperCase();
         
         // Validate captcha
@@ -72,10 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 username: username,
                 password: password,
-<<<<<<< HEAD
-=======
-                user_type: userType,
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
                 captcha: captcha
             })
         })
@@ -123,15 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             appSlogan: "Aerial Intelligence | Ground-Level Precision",
             username: "Username/Email",
             password: "Password",
-<<<<<<< HEAD
             login: "Login",
-=======
-            loginAs: "Login as:",
-            admin: "Admin",
-            user: "User",
-            login: "Login",
-            demoCredentials: "Demo Credentials:",
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
             usernamePlaceholder: "Enter username or email",
             passwordPlaceholder: "Enter password",
             securityCode: "Security Code",
@@ -144,15 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             appSlogan: "आकाशीय दृष्टि | स्थलीय सटीकता",
             username: "उपयोगकर्ता नाम/ईमेल",
             password: "पासवर्ड",
-<<<<<<< HEAD
             login: "लॉगिन",
-=======
-            loginAs: "लॉगिन करें:",
-            admin: "एडमिन",
-            user: "उपयोगकर्ता",
-            login: "लॉगिन",
-            demoCredentials: "डेमो क्रेडेंशियल:",
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
             usernamePlaceholder: "उपयोगकर्ता नाम या ईमेल दर्ज करें",
             passwordPlaceholder: "पासवर्ड दर्ज करें",
             securityCode: "सुरक्षा कोड",
@@ -177,15 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('password').placeholder = translations[lang].passwordPlaceholder;
         document.getElementById('captcha').placeholder = translations[lang].captchaPlaceholder;
         
-<<<<<<< HEAD
         document.querySelector('.login-btn').innerHTML = `<i class="fas fa-sign-in-alt"></i> ${translations[lang].login}`;
-=======
-        document.querySelector('label[for="user-type-admin"]').innerHTML = `<i class="fas fa-user-shield"></i> ${translations[lang].admin}`;
-        document.querySelector('label[for="user-type-user"]').innerHTML = `<i class="fas fa-user"></i> ${translations[lang].user}`;
-        
-        document.querySelector('.login-btn').innerHTML = `<i class="fas fa-sign-in-alt"></i> ${translations[lang].login}`;
-        
-        document.querySelector('.demo-credentials').innerHTML = `<strong>${translations[lang].demoCredentials}</strong><br>Username: admin | Password: admin`;
->>>>>>> 1279d8efd7f44505663ef29551cdf3e87035d4a9
     }
 });
