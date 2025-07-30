@@ -1,6 +1,5 @@
 # Divyadrishti - Drone Application & Research Center
 
-![Divyadrishti Logo](static/images/logo.png)
 
 A comprehensive web-based GIS mapping application for the **Uttarakhand Space Application Center** that integrates with GeoServer to display and manage geospatial data layers. Features advanced mapping capabilities, multi-language support, user authentication, admin dashboard, and enhanced PDF export functionality with visual layer color representation.
 
