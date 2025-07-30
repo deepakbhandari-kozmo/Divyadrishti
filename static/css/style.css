@@ -34,19 +34,12 @@
 }
 
 .sidebar-header {
-    padding: 20px;
+    padding: 15px 20px;
     background: white;
     border-bottom: 1px solid #e9ecef;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-}
-
-.sidebar-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #495057;
 }
 
 #sidebar-toggle-btn {
@@ -70,9 +63,131 @@
     color: #495057;
 }
 
+/* Section Styles */
+.base-map-section,
+.search-section,
+.projects-section {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.base-map-section {
+    padding: 25px 20px 20px 20px;
+}
+
+.search-section {
+    padding: 20px;
+}
+
+.projects-section {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 20px 0 20px;
+}
+
+.section-title {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    letter-spacing: 0.3px;
+}
+
+/* Base Map Selector */
+.base-map-selector {
+    width: 100%;
+}
+
+.base-map-dropdown {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    background: #f8f9fa;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.base-map-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    background: white;
+}
+
+.base-map-dropdown:hover {
+    background: white;
+    border-color: #adb5bd;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    background: white;
+}
+
+.search-icon {
+    color: #6c757d;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+#project-search {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 14px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    outline: none;
+}
+
+#project-search::placeholder {
+    color: #6c757d;
+    font-weight: 400;
+}
+
+.search-clear {
+    background: none;
+    border: none;
+    color: #6c757d;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.3s ease;
+    border-radius: 4px;
+}
+
+.search-clear:hover {
+    color: #495057;
+    background: rgba(0, 0, 0, 0.05);
+}
+
 .sidebar-content {
     flex-grow: 1;
-    padding: 20px;
+    padding: 0 0 20px 0;
     overflow-y: auto;
     background: #f8f9fa;
 }
@@ -123,44 +238,86 @@
 
 /* Workspace Items */
 .workspace-item {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
     overflow: hidden;
-    transition: all 0.3s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .workspace-item:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    border-color: #007bff;
     transform: translateY(-1px);
 }
 
 .workspace-header {
-    padding: 15px;
+    padding: 16px 20px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 500;
     font-size: 14px;
+    background: white;
+    transition: background-color 0.3s ease;
+}
+
+.workspace-header:hover {
     background: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
 }
 
 .workspace-header span {
     color: #495057;
+    font-weight: 500;
 }
 
 .toggle-icon {
-    font-size: 12px;
+    font-size: 14px;
     transition: transform 0.3s;
     color: #6c757d;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .workspace-item.expanded .toggle-icon {
     transform: rotate(90deg);
+}
+
+/* Search filtering */
+.workspace-item.hidden {
+    display: none !important;
+}
+
+.workspace-item.search-highlight .workspace-name {
+    background: linear-gradient(120deg, #fff3cd 0%, #fff3cd 100%);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* No results message */
+.no-results-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.no-results-message i {
+    font-size: 48px;
+    color: #dee2e6;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.no-results-message p {
+    margin: 0;
+    font-size: 16px;
 }
 
 .workspace-controls {
@@ -312,13 +469,14 @@ body.sidebar-collapsed .legend-container {
     border: 1px solid #e9ecef;
     min-width: 280px;
     max-width: 350px;
+    overflow: hidden; /* This prevents dark corners */
 }
 
 .legend-header {
     padding: 16px 20px;
     background: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0; /* Remove border radius to prevent dark corners */
 }
 
 .legend-header h4 {
@@ -357,6 +515,41 @@ body.sidebar-collapsed .legend-container {
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 12px;
+    position: relative;
+}
+
+.legend-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+}
+
+.legend-close-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.legend-close-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+.legend-close-btn:active {
+    transform: scale(0.95);
 }
 
 .legend-graphic-container {
@@ -464,11 +657,7 @@ body.sidebar-collapsed .legend-container {
     background: #f8f9fa;
 }
 
-/* Remove all close button styles */
-.legend-close-all,
-.legend-item-close {
-    display: none;
-}
+/* Legend close button styles are now defined above */
 
 /* Adjust map position for wider sidebar */
 #map {
@@ -634,6 +823,7 @@ body.sidebar-collapsed #map {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-bottom: 80px; /* Add space for scale indicator */
 }
 
 .map-controls-bottom-right button {
@@ -844,6 +1034,91 @@ body.sidebar-collapsed #map {
 .leaflet-control-scale {
     position: relative;
     z-index: 999;
+}
+
+/* Zoom and Scale Info Control */
+.zoom-scale-info {
+    background: rgba(255, 255, 255, 0.95) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;
+    min-width: 110px !important;
+    text-align: center !important;
+    margin-bottom: 15px !important;
+    margin-right: 15px !important;
+    backdrop-filter: blur(5px) !important;
+    z-index: 1000 !important;
+}
+
+/* Ensure proper spacing for bottom-right controls */
+.leaflet-bottom.leaflet-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 10px;
+}
+
+/* Adjust zoom control positioning */
+.leaflet-control-zoom {
+    margin-bottom: 10px !important;
+    margin-right: 0 !important;
+}
+
+/* Responsive adjustments for map controls */
+@media (max-width: 768px) {
+    .zoom-scale-info {
+        font-size: 10px !important;
+        padding: 6px 10px !important;
+        min-width: 100px !important;
+        margin-bottom: 10px !important;
+        margin-right: 10px !important;
+    }
+
+    .leaflet-bottom.leaflet-right {
+        padding: 5px;
+        gap: 8px;
+    }
+
+    .map-controls-bottom-right {
+        bottom: 15px;
+        right: 15px;
+        margin-bottom: 70px; /* Reduced space on mobile */
+        gap: 8px;
+    }
+
+    .map-controls-bottom-right button {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .zoom-scale-info {
+        font-size: 9px !important;
+        padding: 5px 8px !important;
+        min-width: 90px !important;
+        margin-bottom: 8px !important;
+        margin-right: 8px !important;
+    }
+
+    .map-controls-bottom-right {
+        bottom: 10px;
+        right: 10px;
+        margin-bottom: 60px;
+        gap: 6px;
+    }
+
+    .map-controls-bottom-right button {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
 }
 
 /* Fix for raster layer visibility at all zoom levels */

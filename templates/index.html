@@ -13,6 +13,9 @@
 
     <!-- Load theme immediately to prevent flash -->
     <script src="{{ url_for('static', filename='js/theme-loader.js') }}"></script>
+
+    <!-- Translation System -->
+    <script src="{{ url_for('static', filename='js/aggressive-translator.js') }}"></script>
 </head>
 <body>
     <!-- New Header -->
@@ -23,28 +26,28 @@
                     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="header-logo">
                 </div>
                 <div class="title-container">
-                    <h1>Drone Application & Research Center</h1>
-                    <h2>Uttarakhand Space Application Center</h2>
+                    <h1 data-i18n="appTitle">Drone Application & Research Center</h1>
+                    <h2 data-i18n="subTitle">Uttarakhand Space Application Center</h2>
                 </div>
             </div>
             <div class="header-right">
                 <div class="nav-links">
                     <a href="/" class="nav-link active">
-                        <i class="fas fa-map"></i> Map View
+                        <i class="fas fa-map"></i> <span data-i18n="mapView">Map View</span>
                     </a>
                     {% if session.user_type == 'admin' %}
                     <a href="/dashboard" class="nav-link">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                        <i class="fas fa-tachometer-alt"></i> <span data-i18n="dashboard">Dashboard</span>
                     </a>
                     {% endif %}
                     <a href="/profile" class="nav-link">
-                        <i class="fas fa-user-circle"></i> Profile
+                        <i class="fas fa-user-circle"></i> <span data-i18n="profile">Profile</span>
                     </a>
                 </div>
                 <div class="user-info">
-                    <span class="welcome-text">Welcome, {{ session.username }}</span>
+                    <span class="welcome-text"><span data-i18n="welcome">Welcome</span>, {{ session.username }}</span>
                     <a href="/logout" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
                     </a>
                 </div>
                 <div class="language-switch">
@@ -62,19 +65,49 @@
 
     <div id="sidebar">
         <div class="sidebar-header">
-            <h2>Projects</h2>
             <button id="sidebar-toggle-btn">✖</button>
         </div>
-        
-        <div id="workspace-list" class="sidebar-content">
-            Loading workspaces...
+
+        <!-- Base Map Section -->
+        <div class="base-map-section">
+            <h3 class="section-title" data-i18n="selectBaseMap">Select Base Map</h3>
+            <div class="base-map-selector">
+                <select id="base-map-select" class="base-map-dropdown">
+                    <option value="osm">OpenStreetMap</option>
+                    <option value="google-satellite">Google Satellite</option>
+                    <option value="google-hybrid">Google Hybrid</option>
+                    <option value="google-terrain">Google Terrain</option>
+                    <option value="esri-satellite">Esri Satellite</option>
+                    <option value="cartodb-light">CartoDB Light</option>
+                    <option value="cartodb-dark">CartoDB Dark</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="project-search" placeholder="Search Project" data-i18n-placeholder="searchProject">
+                <button id="search-clear" class="search-clear" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Projects Section -->
+        <div class="projects-section">
+            <h3 class="section-title" data-i18n="geoserverProjects">Projects</h3>
+            <div id="workspace-list" class="sidebar-content">
+                Loading workspaces...
+            </div>
         </div>
     </div>
 
     <div id="map"></div>
 
     <div class="search-container">
-        <input type="text" id="search-input" placeholder="Search for Location">
+        <input type="text" id="search-input" placeholder="Search for Location" data-i18n="searchPlaceholder">
         <button id="search-button"><i class="fas fa-search"></i></button>
     </div>
 

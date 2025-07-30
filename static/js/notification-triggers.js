@@ -15,6 +15,13 @@ class NotificationTriggers {
         };
         this.lastAlerts = {};
         this.alertCooldown = 5 * 60 * 1000; // 5 minutes cooldown between same alerts
+        // Specific throttling for certain notification types
+        this.notificationThrottling = {
+            'Slow API Response': {
+                lastNotified: null,
+                throttleDuration: 60 * 60 * 1000 // 1 hour in milliseconds
+            }
+        };
         this.systemStats = {
             cpu: 0,
             memory: 0,
@@ -37,10 +44,10 @@ class NotificationTriggers {
     setupSystemMonitoring() {
         console.log('Setting up system performance monitoring...');
 
-        // Monitor system performance every 15 seconds for more responsive alerts
+        // Monitor system performance every 2 minutes (reduced frequency)
         this.monitoringInterval = setInterval(() => {
             this.checkSystemPerformance();
-        }, 15000);
+        }, 120000); // Changed from 15 seconds to 2 minutes
 
         // Also monitor real browser/system APIs if available
         this.setupBrowserSystemMonitoring();
@@ -182,6 +189,33 @@ class NotificationTriggers {
 
     setAlertCooldown(alertType) {
         this.lastAlerts[alertType] = Date.now();
+    }
+
+    // Check if a notification type should be throttled (for specific notification types with longer throttle periods)
+    shouldThrottleNotification(notificationType) {
+        const throttleConfig = this.notificationThrottling[notificationType];
+        if (!throttleConfig) {
+            return false; // No throttling configured for this type
+        }
+
+        const now = Date.now();
+        const lastNotified = throttleConfig.lastNotified;
+
+        // If never notified before, allow notification
+        if (!lastNotified) {
+            return false;
+        }
+
+        // Check if enough time has passed since last notification
+        const timeSinceLastNotification = now - lastNotified;
+        return timeSinceLastNotification < throttleConfig.throttleDuration;
+    }
+
+    // Mark a notification type as having been sent
+    markNotificationSent(notificationType) {
+        if (this.notificationThrottling[notificationType]) {
+            this.notificationThrottling[notificationType].lastNotified = Date.now();
+        }
     }
 
     // Real browser system monitoring methods
@@ -421,14 +455,23 @@ class NotificationTriggers {
                 
                 // Alert on slow API calls
                 if (duration > 10000) { // 10 seconds
-                    await this.createNotification({
-                        type: 'warning',
-                        title: 'Slow API Response',
-                        message: `API call took ${duration}ms to complete. Check server performance.`,
-                        priority: 'medium',
-                        category: 'system',
-                        actionUrl: '/dashboard'
-                    });
+                    const notificationType = 'Slow API Response';
+                    if (!this.shouldThrottleNotification(notificationType)) {
+                        await this.createNotification({
+                            type: 'warning',
+                            title: 'Slow API Response',
+                            message: `API call took ${duration}ms to complete. Check server performance.`,
+                            priority: 'medium',
+                            category: 'system',
+                            actionUrl: '/dashboard'
+                        });
+                        // Mark this notification type as sent
+                        this.markNotificationSent(notificationType);
+                        console.log(`Slow API Response notification sent. Next notification allowed after: ${new Date(Date.now() + this.notificationThrottling[notificationType].throttleDuration).toLocaleString()}`);
+                    } else {
+                        const nextAllowedTime = new Date(this.notificationThrottling[notificationType].lastNotified + this.notificationThrottling[notificationType].throttleDuration);
+                        console.log(`Slow API Response notification throttled. API call duration: ${duration}ms. Next notification allowed at: ${nextAllowedTime.toLocaleString()}`);
+                    }
                 }
                 
                 return response;

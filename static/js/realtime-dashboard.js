@@ -396,7 +396,7 @@ class RealtimeDashboard {
     }
     
     startRealtimeUpdates() {
-        // Start the main real-time update loop
+        // Start the main real-time update loop (reduced frequency)
         this.updateInterval = setInterval(() => {
             if (this.isActive && !document.hidden) {
                 this.updateLiveMetrics();
@@ -404,9 +404,9 @@ class RealtimeDashboard {
                 this.updateLiveCharts();
                 this.checkForAlerts();
             }
-        }, this.updateFrequency);
-        
-        console.log('🔴 Real-time updates started (every 5 seconds)');
+        }, 30000); // Changed from 5 seconds to 30 seconds
+
+        console.log('🔴 Real-time updates started (every 30 seconds)');
     }
     
     updateLiveMetrics() {

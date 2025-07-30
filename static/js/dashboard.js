@@ -2,60 +2,98 @@
 let storageChart, activityChart, projectChart;
 let refreshInterval;
 
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeDashboard();
-    setupAutoRefresh();
-});
+// Dashboard initialization will be called from the template
+// Removed duplicate DOMContentLoaded listener to prevent double initialization
 
 // Initialize all dashboard components
 function initializeDashboard() {
-    loadQuickStats();
+    // Get user type from template or session
+    const userType = getUserType();
+
+    // Load common components for all users
     loadStorageData();
     loadActivityData();
     loadProjectData();
     loadAlerts();
-    loadUsers();
-    loadPendingUsers();
     initializeCharts();
+
+    // Load admin-specific components only for admins
+    if (userType === 'admin') {
+        // Check if user table exists before trying to load users
+        const userTableBody = document.getElementById('users-table-body');
+        if (userTableBody) {
+            try {
+                loadUsers();
+            } catch (error) {
+                console.error('Error calling loadUsers():', error);
+            }
+        } else {
+            // Retry after delay if table not found
+            setTimeout(() => {
+                const retryTableBody = document.getElementById('users-table-body');
+                if (retryTableBody) {
+                    try {
+                        loadUsers();
+                    } catch (error) {
+                        console.error('Error calling loadUsers() on retry:', error);
+                    }
+                }
+            }, 1000);
+        }
+
+        loadPendingUsers();
+    }
+}
+
+// Get user type from the page or session
+function getUserType() {
+    // First try to get from template variable (most reliable)
+    if (window.USER_TYPE) {
+        console.log('🔍 getUserType: Using template variable:', window.USER_TYPE);
+        return window.USER_TYPE;
+    }
+
+    // Fallback: Try to get from page title
+    const titleElement = document.querySelector('title');
+    if (titleElement && titleElement.textContent.includes('Admin Dashboard')) {
+        console.log('🔍 getUserType: Detected admin from title');
+        return 'admin';
+    }
+
+    // Fallback: Try to get from page heading
+    const headingElement = document.querySelector('h1');
+    if (headingElement && headingElement.textContent.includes('Admin Dashboard')) {
+        console.log('🔍 getUserType: Detected admin from heading');
+        return 'admin';
+    }
+
+    // Default to regular user
+    console.log('🔍 getUserType: Defaulting to user');
+    return 'user';
 }
 
 // Setup auto-refresh for real-time updates
 function setupAutoRefresh() {
     refreshInterval = setInterval(() => {
-        loadQuickStats();
+        const userType = getUserType();
+
+        // Refresh common components
         loadStorageData();
         loadActivityData();
         loadAlerts();
-        loadPendingUsers();
+
+        // Refresh admin-specific components only for admins
+        if (userType === 'admin') {
+            loadPendingUsers();
+        }
     }, 30000); // Refresh every 30 seconds
 }
 
-// Load quick stats for stat cards
-async function loadQuickStats() {
-    try {
-        const [storageResponse, activityResponse, projectResponse, alertsResponse] = await Promise.all([
-            fetch('/api/dashboard/storage'),
-            fetch('/api/dashboard/user_activity'),
-            fetch('/api/dashboard/project_performance'),
-            fetch('/api/dashboard/alerts')
-        ]);
 
-        const storageData = await storageResponse.json();
-        const activityData = await activityResponse.json();
-        const projectData = await projectResponse.json();
-        const alertsData = await alertsResponse.json();
 
-        // Update stat cards
-        document.getElementById('storage-usage').textContent = `${storageData.disk.usage_percent}%`;
-        document.getElementById('active-users').textContent = activityData.active_sessions;
-        document.getElementById('total-projects').textContent = projectData.metrics.total_projects;
-        document.getElementById('alert-count').textContent = alertsData.unread_count;
 
-    } catch (error) {
-        console.error('Error loading quick stats:', error);
-    }
-}
+
+
 
 // Load and display storage monitoring data
 async function loadStorageData() {
@@ -125,16 +163,18 @@ async function loadAlerts() {
 // Load and display users for role management
 async function loadUsers() {
     try {
-        console.log('Loading users...');
         const response = await fetch('/api/dashboard/users');
-        console.log('Users API response status:', response.status);
+
+        if (response.status === 403) {
+            displayUsersError('Access denied - admin privileges required');
+            return;
+        }
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Users data received:', data);
 
         if (data.users) {
             displayUsers(data.users);
@@ -154,10 +194,19 @@ async function loadUsers() {
 async function loadPendingUsers() {
     try {
         const response = await fetch('/api/dashboard/pending_users');
+
+        if (response.status === 403) {
+            console.log('Access denied - user is not admin');
+            return; // Silently skip for non-admin users
+        }
+
         const data = await response.json();
 
         displayPendingUsers(data.pending_users);
-        document.getElementById('pending-count').textContent = data.count;
+        const pendingCountElement = document.getElementById('pending-count');
+        if (pendingCountElement) {
+            pendingCountElement.textContent = data.count;
+        }
 
     } catch (error) {
         console.error('Error loading pending users:', error);
@@ -359,12 +408,17 @@ function displayAlerts(alerts) {
 // Display users table
 function displayUsers(users) {
     const usersTableBody = document.getElementById('users-table-body');
+    if (!usersTableBody) {
+        console.error('users-table-body element not found!');
+        return;
+    }
+
     usersTableBody.innerHTML = '';
 
-    users.forEach(user => {
+    users.forEach((user) => {
         const row = document.createElement('tr');
         const lastLogin = new Date(user.last_login).toLocaleDateString();
-        
+
         row.innerHTML = `
             <td>${user.username}</td>
             <td>${user.email}</td>
@@ -372,10 +426,10 @@ function displayUsers(users) {
             <td><span class="user-status ${user.status}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span></td>
             <td>${lastLogin}</td>
             <td>
-                <button class="action-btn edit-btn" onclick="editUser('${user.id}')">
+                <button class="action-btn edit-btn" onclick="editUser('${user.id}')" title="Edit User">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')">
+                <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')" title="Delete User">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -385,9 +439,15 @@ function displayUsers(users) {
 
     // Show no users message if empty
     if (users.length === 0) {
-        const usersTableBody = document.getElementById('users-table-body');
         usersTableBody.innerHTML = '<tr><td colspan="6" class="no-users-message">No users found</td></tr>';
     }
+
+    // Fix action button icons after loading users
+    setTimeout(() => {
+        if (typeof fixActionButtonIcons === 'function') {
+            fixActionButtonIcons();
+        }
+    }, 100);
 }
 
 // Display users error message
@@ -686,14 +746,27 @@ function closeUserModal() {
 
 async function saveUser() {
     const userId = document.getElementById('user-id').value;
+    const passwordField = document.getElementById('user-password');
+    const passwordValue = passwordField.value || '';
+
+    // DEBUG: Log password details
+    console.log('🔍 PASSWORD DEBUG:');
+    console.log('  - Password field value:', passwordValue);
+    console.log('  - Password length:', passwordValue.length);
+    console.log('  - Password field maxLength:', passwordField.maxLength);
+    console.log('  - Password field attributes:', passwordField.attributes);
+
     const userData = {
         username: document.getElementById('user-username').value,
         email: document.getElementById('user-email').value,
         role: document.getElementById('user-role').value,
         status: document.getElementById('user-status').value,
         full_name: document.getElementById('user-fullname').value || '',
-        password: document.getElementById('user-password').value || ''
+        password: passwordValue
     };
+
+    // DEBUG: Log complete user data
+    console.log('🔍 USER DATA BEING SENT:', userData);
 
     // Validation
     if (!userData.username || !userData.email || !userData.role || !userData.status) {
@@ -726,12 +799,17 @@ async function saveUser() {
                 return;
             }
 
+            // DEBUG: Log the exact JSON being sent
+            const jsonData = JSON.stringify(userData);
+            console.log('🔍 EXACT JSON BEING SENT:', jsonData);
+            console.log('🔍 JSON LENGTH:', jsonData.length);
+
             response = await fetch('/api/dashboard/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userData)
+                body: jsonData
             });
             successMessage = `User ${userData.username} created successfully`;
         }

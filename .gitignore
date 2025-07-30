@@ -132,3 +132,50 @@ tmp/
 uploads/
 exports/
 cache/
+
+# Test files and development artifacts
+test_*.py
+test_*.js
+test_*.html
+*_test.py
+*_test.js
+*_test.html
+dev_*.py
+dev_*.js
+debug_*.py
+debug_*.js
+temp_*.py
+temp_*.js
+temp_*.html
+tmp_*.py
+tmp_*.js
+tmp_*.html
+sample_*.py
+sample_*.js
+example_*.py
+example_*.js
+experimental_*.py
+experimental_*.js
+*_old.*
+*_backup.*
+*_bak.*
+
+# Documentation that shouldn't be committed
+AUTO_NOTIFICATION_PARAMETERS.md
+CODEBASE_INDEX.md
+FIREBASE_SETUP.md
+README_NEW.md
+firestore-rules.txt
+
+# Corrupted or backup files
+app_corrupted.py
+*_corrupted.*
+
+# Security files
+firebase-service-account.json.backup
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/

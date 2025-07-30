@@ -349,6 +349,146 @@ body {
     font-weight: 500;
 }
 
+/* Modern Status Bar */
+.modern-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.status-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.status-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.status-pill .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+    animation: pulse-modern 2s infinite;
+}
+
+.status-pill .status-dot.online {
+    background: #28a745;
+    animation: pulse-modern 2s infinite;
+}
+
+.status-pill .status-dot.offline {
+    background: #dc3545;
+    animation: pulse-error 2s infinite;
+}
+
+.status-pill .status-dot.warning {
+    background: #ffc107;
+    animation: pulse-warning 2s infinite;
+}
+
+.status-pill .status-text {
+    color: #28a745;
+    text-transform: uppercase;
+    transition: color 0.3s ease;
+}
+
+.status-pill .status-text.online {
+    color: #28a745;
+}
+
+.status-pill .status-text.offline {
+    color: #dc3545;
+}
+
+.status-pill .status-text.warning {
+    color: #ffc107;
+}
+
+.status-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.last-updated {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.refresh-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: #007bff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.refresh-btn:hover {
+    background: #007bff;
+    color: white;
+    transform: rotate(180deg);
+}
+
+@keyframes pulse-modern {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes pulse-error {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+@keyframes pulse-warning {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(255, 193, 7, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
 .refresh-btn {
     background: #007bff;
     color: white;
@@ -448,41 +588,123 @@ body {
 
 /* Action Buttons */
 .action-btn {
-    background: none;
-    border: none;
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     margin: 0 0.25rem;
-    border-radius: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+}
+
+.action-btn i {
+    font-size: 0.875rem;
+    line-height: 1;
 }
 
 .action-btn.edit,
 .action-btn.edit-btn {
-    color: #007bff;
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
 }
 
 .action-btn.edit:hover,
 .action-btn.edit-btn:hover {
-    background: rgba(0, 123, 255, 0.1);
+    background: #2980b9;
+    border-color: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
 .action-btn.delete,
 .action-btn.delete-btn {
-    color: #dc3545;
+    background: #e74c3c;
+    color: white;
+    border-color: #e74c3c;
 }
 
 .action-btn.delete:hover,
 .action-btn.delete-btn:hover {
-    background: rgba(220, 53, 69, 0.1);
+    background: #c0392b;
+    border-color: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
 .action-btn.approve {
-    color: #28a745;
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
 }
 
 .action-btn.approve:hover {
-    background: rgba(40, 167, 69, 0.1);
+    background: #218838;
+    border-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Ensure Font Awesome icons are visible */
+.action-btn i.fas,
+.action-btn i.fa {
+    display: inline-block !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    line-height: 1 !important;
+    text-rendering: auto !important;
+    -webkit-font-smoothing: antialiased !important;
+}
+
+/* Specific icon fixes */
+.action-btn i.fa-edit:before {
+    content: "\f044" !important;
+}
+
+.action-btn i.fa-trash:before {
+    content: "\f2ed" !important;
+}
+
+/* Table action buttons container */
+td .action-btn {
+    margin: 0 2px;
+}
+
+/* Ensure proper spacing in action cells */
+td:last-child {
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Force icon visibility with fallback */
+.action-btn i:before {
+    display: inline-block !important;
+    font-size: inherit !important;
+}
+
+/* Fallback for missing icons */
+.action-btn i[data-fallback]:empty:after {
+    content: attr(data-fallback);
+    font-family: inherit;
+}
+
+/* Ensure buttons are visible even without icons */
+.action-btn:empty:after {
+    content: "⚙️";
+}
+
+.edit-btn:empty:after {
+    content: "✏️";
+}
+
+.delete-btn:empty:after {
+    content: "🗑️";
 }
 
 /* Loading and Error Messages */
@@ -549,6 +771,24 @@ body {
         flex-wrap: wrap;
         gap: 0.5rem;
         padding: 1rem;
+    }
+
+    .modern-status-bar {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .status-pill {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .status-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        margin-left: 0;
     }
 
     .detail-group {
@@ -933,33 +1173,7 @@ body {
 .user-status.active { background: #d5f4e6; color: #27ae60; }
 .user-status.inactive { background: #fadbd8; color: #e74c3c; }
 
-.action-btn {
-    padding: 0.3rem 0.6rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    margin-right: 0.3rem;
-    transition: all 0.3s ease;
-}
-
-.edit-btn {
-    background: #3498db;
-    color: white;
-}
-
-.edit-btn:hover {
-    background: #2980b9;
-}
-
-.delete-btn {
-    background: #e74c3c;
-    color: white;
-}
-
-.delete-btn:hover {
-    background: #c0392b;
-}
+/* Duplicate action-btn styles removed - using unified styles above */
 
 /* System Status */
 .system-metrics {
@@ -1613,7 +1827,8 @@ body {
 }
 
 .current-value {
-    animation: pulse 2s infinite;
+    /* Removed pulse animation for better readability */
+    /* animation: pulse 2s infinite; */
 }
 
 /* Loading animation for refresh button */
@@ -2061,7 +2276,7 @@ body {
 /* Charts Grid */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: 1fr 1fr; /* Two equal columns for the remaining charts */
     gap: 1.5rem;
     padding: 1.5rem;
 }
@@ -2916,6 +3131,30 @@ body {
         grid-template-columns: 1fr;
         gap: 0.5rem;
         padding: 0.5rem;
+    }
+
+    .modern-status-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .status-pill {
+        justify-content: center;
+        font-size: 0.65rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .status-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        align-items: center;
+    }
+
+    .last-updated {
+        text-align: center;
     }
 
     .status-item {

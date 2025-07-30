@@ -17,48 +17,123 @@ class AnalyticsManager {
     
     init() {
         console.log('🔍 Initializing Analytics Manager...');
+        console.log('👤 Analytics available for all logged-in users');
         this.setupTimeRangeSelector();
         this.waitForRealData();
     }
 
-    waitForRealData() {
+    waitForRealData(attempts = 0) {
+        const maxAttempts = 10; // Wait up to 10 seconds
+
         // Wait for real analytics processor to be ready
         if (window.realAnalyticsProcessor) {
             this.useRealData = true;
             this.loadRealData();
-        } else {
-            console.log('⏳ Waiting for real analytics data...');
-            setTimeout(() => this.waitForRealData(), 1000);
+            return;
         }
+
+        if (attempts < maxAttempts) {
+            console.log(`⏳ Waiting for real analytics data... (${attempts + 1}/${maxAttempts})`);
+            setTimeout(() => this.waitForRealData(attempts + 1), 1000);
+        } else {
+            console.log('⚠️ Real analytics processor not available, using dummy data');
+            this.useRealData = false;
+            this.loadDummyData();
+        }
+    }
+
+    async loadDummyData() {
+        console.log('📊 Loading dummy analytics data...');
+
+        try {
+            // Try to fetch data from new analytics API first
+            const response = await fetch(`/api/analytics/combined?range=${this.currentTimeRange}`);
+            if (response.ok) {
+                const apiData = await response.json();
+                if (apiData.success) {
+                    console.log('✅ Using backend analytics API data');
+
+                    // Use API data for charts
+                    this.analyticsData.userActivity = apiData.userActivity || this.generateUserActivityData();
+                    this.analyticsData.performance = apiData.performance || this.generatePerformanceData();
+
+                    // Generate quick stats from the chart data
+                    this.analyticsData.quickStats = this.generateQuickStatsFromData();
+                    this.analyticsData.quickStats.dataSource = 'backend_api';
+                } else {
+                    throw new Error('API returned error: ' + apiData.error);
+                }
+            } else {
+                throw new Error('API not available');
+            }
+        } catch (error) {
+            console.log('⚠️ Backend API not available, using local dummy data:', error.message);
+            // Generate all data locally
+            this.generateInitialData();
+        }
+
+        this.createCharts();
+        this.updateQuickStats();
+        this.startRealTimeUpdates();
+        console.log('✅ Dummy analytics data loaded');
+        this.updateDataSourceIndicator('dummy');
     }
 
     loadRealData() {
         console.log('📊 Loading real analytics data...');
 
-        // Get real data for current time range
-        const realData = window.realAnalyticsProcessor.getDataForTimeRange(this.currentTimeRange);
-        const realStats = window.realAnalyticsProcessor.getRealTimeStats();
+        try {
+            // Get real data for current time range
+            const realData = window.realAnalyticsProcessor.getDataForTimeRange(this.currentTimeRange);
+            const realStats = window.realAnalyticsProcessor.getRealTimeStats();
 
-        // Update analytics data with real data
-        this.analyticsData.userActivity = realData.userActivity || [];
-        this.analyticsData.performance = realData.performance || [];
-        this.analyticsData.devices = this.convertDeviceStats(realStats.deviceBreakdown);
-        this.analyticsData.topPages = realStats.topPages || {};
-        this.analyticsData.quickStats = realStats;
+            // Check if we have sufficient real data
+            const hasUserActivity = realData.userActivity && realData.userActivity.length > 0;
+            const hasPerformanceData = realData.performance && realData.performance.length > 0;
+            const hasRealStats = realStats && Object.keys(realStats).length > 0;
 
-        // Create charts and update UI
-        this.createCharts();
-        this.updateQuickStats();
-        this.startRealTimeUpdates();
+            if (hasUserActivity || hasPerformanceData || hasRealStats) {
+                console.log('✅ Using real analytics data');
 
-        console.log('✅ Real analytics data loaded');
+                // Use real data where available, fall back to dummy data for missing parts
+                this.analyticsData.userActivity = realData.userActivity || this.generateUserActivityData();
+                this.analyticsData.performance = realData.performance || this.generatePerformanceData();
+                this.analyticsData.devices = this.convertDeviceStats(realStats.deviceBreakdown) || this.generateDeviceData();
+                this.analyticsData.topPages = realStats.topPages || this.generateTopPagesData();
+                this.analyticsData.quickStats = realStats || this.generateQuickStatsData();
+
+                // Register for real-time updates
+                if (window.realAnalyticsProcessor.addListener) {
+                    window.realAnalyticsProcessor.addListener((type, data) => {
+                        this.handleRealDataUpdate(type, data);
+                    });
+                }
+            } else {
+                console.log('⚠️ No real data available, using dummy data');
+                this.loadDummyData();
+                return;
+            }
+
+            // Create charts and update UI
+            this.createCharts();
+            this.updateQuickStats();
+            this.startRealTimeUpdates();
+
+            console.log('✅ Real analytics data loaded successfully');
+            this.updateDataSourceIndicator('real');
+
+        } catch (error) {
+            console.error('❌ Error loading real analytics data:', error);
+            console.log('🔄 Falling back to dummy data');
+            this.loadDummyData();
+        }
     }
 
     convertDeviceStats(deviceBreakdown) {
-        if (!deviceBreakdown) return { Desktop: 50, Mobile: 30, Tablet: 15, Other: 5 };
+        if (!deviceBreakdown) return null;
 
         const total = Object.values(deviceBreakdown).reduce((sum, count) => sum + count, 0);
-        if (total === 0) return { Desktop: 50, Mobile: 30, Tablet: 15, Other: 5 };
+        if (total === 0) return null;
 
         return {
             Desktop: Math.round((deviceBreakdown.desktop / total) * 100),
@@ -66,6 +141,213 @@ class AnalyticsManager {
             Tablet: Math.round((deviceBreakdown.tablet / total) * 100),
             Other: Math.round((deviceBreakdown.other / total) * 100)
         };
+    }
+
+    // Helper functions for generating fallback data
+    generateUserActivityData() {
+        const now = new Date();
+        const dataPoints = this.getDataPointsForRange(this.currentTimeRange);
+        const userActivity = [];
+
+        for (let i = dataPoints - 1; i >= 0; i--) {
+            const time = new Date(now.getTime() - i * this.getIntervalForRange(this.currentTimeRange));
+            const hour = time.getHours();
+            const baseUsers = this.getBaseUsersForHour(hour);
+            const activeUsers = baseUsers + Math.floor(Math.random() * 20) - 10;
+            const pageViews = activeUsers * (2 + Math.random() * 3);
+
+            userActivity.push({
+                time: time,
+                activeUsers: Math.max(0, activeUsers),
+                pageViews: Math.max(0, Math.floor(pageViews))
+            });
+        }
+        return userActivity;
+    }
+
+    generatePerformanceData() {
+        const now = new Date();
+        const dataPoints = this.getDataPointsForRange(this.currentTimeRange);
+        const performance = [];
+
+        for (let i = dataPoints - 1; i >= 0; i--) {
+            const time = new Date(now.getTime() - i * this.getIntervalForRange(this.currentTimeRange));
+            performance.push({
+                time: time,
+                loadTime: 800 + Math.random() * 1200,
+                responseTime: 50 + Math.random() * 200
+            });
+        }
+        return performance;
+    }
+
+    generateDeviceData() {
+        return {
+            'Desktop': 45 + Math.random() * 10,
+            'Mobile': 35 + Math.random() * 10,
+            'Tablet': 15 + Math.random() * 5,
+            'Other': 5 + Math.random() * 3
+        };
+    }
+
+    generateTopPagesData() {
+        return {
+            '/dashboard': Math.floor(Math.random() * 100) + 50,
+            '/map': Math.floor(Math.random() * 80) + 30,
+            '/profile': Math.floor(Math.random() * 60) + 20,
+            '/settings': Math.floor(Math.random() * 40) + 10,
+            '/help': Math.floor(Math.random() * 30) + 5
+        };
+    }
+
+    generateQuickStatsData() {
+        return {
+            activeUsers: Math.floor(Math.random() * 50) + 20,
+            avgUserTime: Math.floor(Math.random() * 300) + 120, // 2-7 minutes
+            bounceRate: Math.floor(Math.random() * 30) + 20, // 20-50%
+            pageViews: Math.floor(Math.random() * 500) + 200
+        };
+    }
+
+    generateQuickStatsFromData() {
+        // Generate quick stats from actual chart data
+        const userActivity = this.analyticsData.userActivity || [];
+        const performance = this.analyticsData.performance || [];
+
+        if (userActivity.length === 0 || performance.length === 0) {
+            return this.generateQuickStatsData();
+        }
+
+        // Calculate current active users (latest data point)
+        const latestUserData = userActivity[userActivity.length - 1];
+        const activeUsers = latestUserData ? latestUserData.activeUsers : 0;
+
+        // Calculate average load time from performance data
+        const avgLoadTime = performance.length > 0
+            ? Math.round(performance.reduce((sum, p) => sum + (p.loadTime || 0), 0) / performance.length)
+            : 1000;
+
+        // Calculate uptime based on performance (good performance = high uptime)
+        const avgResponseTime = performance.length > 0
+            ? performance.reduce((sum, p) => sum + (p.responseTime || 0), 0) / performance.length
+            : 100;
+
+        const uptime = Math.max(95, Math.min(99.9, 100 - (avgResponseTime / 50))); // Convert response time to uptime
+
+        // Calculate error count based on performance
+        const errorCount = Math.floor(avgLoadTime > 2000 ? Math.random() * 10 : Math.random() * 3);
+
+        return {
+            activeUsers: activeUsers,
+            avgLoadTime: avgLoadTime,
+            uptime: uptime.toFixed(1),
+            errorCount: errorCount,
+            pageViews: latestUserData ? latestUserData.pageViews : 0
+        };
+    }
+
+    updateDataSourceIndicator(source) {
+        // Add a data source indicator to the analytics card header
+        const cardHeader = document.querySelector('.analytics-card .card-header h3');
+        if (cardHeader) {
+            // Remove existing indicator
+            const existingIndicator = cardHeader.querySelector('.data-source-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+
+            // Add new indicator
+            const indicator = document.createElement('span');
+            indicator.className = 'data-source-indicator';
+            indicator.style.cssText = `
+                margin-left: 10px;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                ${source === 'real' ?
+                    'background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);' :
+                    'background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);'
+                }
+            `;
+            indicator.textContent = source === 'real' ? '🟢 Live Data' : '🟡 Demo Data';
+            cardHeader.appendChild(indicator);
+        }
+    }
+
+    addChartDataIndicators() {
+        const chartContainers = [
+            { id: 'user-activity-chart', name: 'User Activity', dataType: 'userActivity' },
+            { id: 'performance-chart', name: 'Performance Metrics', dataType: 'performance' }
+        ];
+
+        chartContainers.forEach(chart => {
+            const chartElement = document.getElementById(chart.id);
+            if (chartElement) {
+                const container = chartElement.closest('.chart-container');
+                if (container) {
+                    // Remove existing indicator
+                    const existingIndicator = container.querySelector('.chart-data-indicator');
+                    if (existingIndicator) {
+                        existingIndicator.remove();
+                    }
+
+                    // Determine data source for this specific chart
+                    const isRealData = this.isChartUsingRealData(chart.dataType);
+
+                    // Add new indicator
+                    const indicator = document.createElement('div');
+                    indicator.className = 'chart-data-indicator';
+                    indicator.style.cssText = `
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        padding: 2px 6px;
+                        border-radius: 8px;
+                        font-size: 9px;
+                        font-weight: 600;
+                        z-index: 10;
+                        ${isRealData ?
+                            'background: rgba(40, 167, 69, 0.8); color: white;' :
+                            'background: rgba(255, 193, 7, 0.8); color: white;'
+                        }
+                    `;
+                    indicator.textContent = isRealData ? '🟢 LIVE' : '🟡 DEMO';
+
+                    // Make container relative positioned
+                    container.style.position = 'relative';
+                    container.appendChild(indicator);
+                }
+            }
+        });
+    }
+
+    isChartUsingRealData(dataType) {
+        // Check if this specific chart is using real data
+        if (!this.useRealData || !window.realAnalyticsProcessor) {
+            return false;
+        }
+
+        try {
+            const realData = window.realAnalyticsProcessor.getDataForTimeRange(this.currentTimeRange);
+            const realStats = window.realAnalyticsProcessor.getRealTimeStats();
+
+            switch (dataType) {
+                case 'userActivity':
+                    return realData.userActivity && realData.userActivity.length > 0;
+                case 'performance':
+                    return realData.performance && realData.performance.length > 0;
+                case 'devices':
+                    return realStats.deviceBreakdown && Object.keys(realStats.deviceBreakdown).length > 0;
+                case 'topPages':
+                    return realStats.topPages && Object.keys(realStats.topPages).length > 0;
+                default:
+                    return false;
+            }
+        } catch (error) {
+            return false;
+        }
     }
 
     handleRealDataUpdate(type, data) {
@@ -87,12 +369,10 @@ class AnalyticsManager {
                 }
                 break;
             case 'deviceStats':
-                this.analyticsData.devices = this.convertDeviceStats(data);
-                this.updateDeviceChart();
+                // Device chart removed
                 break;
             case 'topPages':
-                this.analyticsData.topPages = data;
-                this.updateTopPagesChart();
+                // Top pages chart removed
                 break;
             case 'realTimeStats':
                 this.analyticsData.quickStats = data;
@@ -329,16 +609,19 @@ class AnalyticsManager {
     createCharts() {
         this.createUserActivityChart();
         this.createPerformanceChart();
-        this.createDeviceChart();
-        this.createTopPagesChart();
+
+        // Add data source indicators to each chart
+        this.addChartDataIndicators();
     }
     
     createUserActivityChart() {
         const ctx = document.getElementById('user-activity-chart');
         if (!ctx) return;
-        
-        const labels = this.analyticsData.userActivity.map(d => 
-            this.currentTimeRange === '24h' 
+
+        console.log('📈 Creating User Activity chart with', this.analyticsData.userActivity.length, 'data points');
+
+        const labels = this.analyticsData.userActivity.map(d =>
+            this.currentTimeRange === '24h'
                 ? d.time.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
                 : d.time.toLocaleDateString()
         );
@@ -391,9 +674,11 @@ class AnalyticsManager {
     createPerformanceChart() {
         const ctx = document.getElementById('performance-chart');
         if (!ctx) return;
-        
-        const labels = this.analyticsData.performance.map(d => 
-            this.currentTimeRange === '24h' 
+
+        console.log('⚡ Creating Performance chart with', this.analyticsData.performance.length, 'data points');
+
+        const labels = this.analyticsData.performance.map(d =>
+            this.currentTimeRange === '24h'
                 ? d.time.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
                 : d.time.toLocaleDateString()
         );
@@ -460,120 +745,18 @@ class AnalyticsManager {
         });
     }
     
-    createDeviceChart() {
-        const ctx = document.getElementById('device-chart');
-        if (!ctx) return;
-        
-        this.charts.device = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(this.analyticsData.devices),
-                datasets: [{
-                    data: Object.values(this.analyticsData.devices),
-                    backgroundColor: [
-                        '#007bff',
-                        '#28a745',
-                        '#ffc107',
-                        '#dc3545'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
-                    }
-                }
-            }
-        });
-    }
-    
-    createTopPagesChart() {
-        const ctx = document.getElementById('pages-chart');
-        if (!ctx) return;
-        
-        this.charts.topPages = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(this.analyticsData.topPages),
-                datasets: [{
-                    label: 'Page Views',
-                    data: Object.values(this.analyticsData.topPages),
-                    backgroundColor: [
-                        '#007bff',
-                        '#28a745',
-                        '#ffc107',
-                        '#dc3545',
-                        '#6f42c1'
-                    ],
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    }
+
     
     updateQuickStats() {
         const stats = this.analyticsData.quickStats || {};
 
-        // Update DOM elements with real data
-        const activeUsersElement = document.getElementById('active-users-count');
-        const avgLoadTimeElement = document.getElementById('avg-load-time');
-        const errorCountElement = document.getElementById('error-count');
-        const uptimeElement = document.getElementById('uptime-percentage');
-
-        if (activeUsersElement) {
-            activeUsersElement.textContent = stats.activeUsers || 0;
+        // Update top dashboard stats if analytics is managing them
+        if (window.updateTopStatsDisplay && typeof window.updateTopStatsDisplay === 'function') {
+            window.updateTopStatsDisplay(stats);
         }
 
-        if (avgLoadTimeElement) {
-            const avgLoadTime = stats.avgLoadTime || 0;
-            avgLoadTimeElement.textContent = Math.round(avgLoadTime) + 'ms';
-        }
-
-        if (errorCountElement) {
-            // For now, we'll use a calculated error count based on performance
-            const errorCount = this.calculateErrorCount(stats);
-            errorCountElement.textContent = errorCount;
-        }
-
-        if (uptimeElement) {
-            // Calculate uptime based on successful page loads
-            const uptime = this.calculateUptime(stats);
-            uptimeElement.textContent = uptime + '%';
-        }
-
-        // Update change indicators
-        this.updateChangeIndicators(stats);
+        // Log analytics data for debugging
+        console.log('📊 Analytics quick stats updated:', stats);
     }
 
     calculateErrorCount(stats) {
@@ -655,7 +838,7 @@ class AnalyticsManager {
         return Math.round(((avgLoadTime - baseline) / baseline) * 100);
     }
     
-    updateChartsForTimeRange() {
+    async updateChartsForTimeRange() {
         console.log('📊 Updating charts for time range:', this.currentTimeRange);
 
         if (this.useRealData && window.realAnalyticsProcessor) {
@@ -679,9 +862,26 @@ class AnalyticsManager {
                 performance: this.analyticsData.performance.length
             });
         } else {
-            // Fallback to dummy data
-            console.log('📊 Using dummy data (real analytics not available)');
-            this.generateInitialData();
+            // Try backend API as fallback
+            try {
+                const response = await fetch(`/api/analytics/combined?range=${this.currentTimeRange}`);
+                if (response.ok) {
+                    const apiData = await response.json();
+                    if (apiData.success) {
+                        this.analyticsData.userActivity = apiData.userActivity || [];
+                        this.analyticsData.performance = apiData.performance || [];
+                        console.log('📊 Updated with backend API data for range:', this.currentTimeRange);
+                    } else {
+                        throw new Error('API returned error');
+                    }
+                } else {
+                    throw new Error('API not available');
+                }
+            } catch (error) {
+                // Final fallback to dummy data
+                console.log('📊 Using dummy data (backend API not available):', error.message);
+                this.generateInitialData();
+            }
         }
 
         // Destroy existing charts
@@ -742,25 +942,7 @@ class AnalyticsManager {
         this.charts.performance.update('none');
     }
 
-    updateDeviceChart() {
-        if (!this.charts.device || !this.analyticsData.devices) return;
 
-        this.charts.device.data.labels = Object.keys(this.analyticsData.devices);
-        this.charts.device.data.datasets[0].data = Object.values(this.analyticsData.devices);
-        this.charts.device.update('none');
-    }
-
-    updateTopPagesChart() {
-        if (!this.charts.topPages || !this.analyticsData.topPages) return;
-
-        const topPages = Object.entries(this.analyticsData.topPages)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
-
-        this.charts.topPages.data.labels = topPages.map(([page]) => page);
-        this.charts.topPages.data.datasets[0].data = topPages.map(([,count]) => count);
-        this.charts.topPages.update('none');
-    }
     
     startRealTimeUpdates() {
         // Update data every 30 seconds
@@ -769,12 +951,54 @@ class AnalyticsManager {
         }, 30000);
     }
     
-    updateRealTimeData() {
+    async updateRealTimeData() {
         if (this.currentTimeRange !== '24h') return; // Only update for real-time view
-        
+
+        // Try to get real-time data first
+        if (this.useRealData && window.realAnalyticsProcessor) {
+            try {
+                const realStats = window.realAnalyticsProcessor.getRealTimeStats();
+                if (realStats && Object.keys(realStats).length > 0) {
+                    // Update with real data
+                    this.analyticsData.quickStats = realStats;
+                    this.updateQuickStats();
+                    console.log('📊 Updated with real-time data');
+                    return;
+                }
+            } catch (error) {
+                console.warn('⚠️ Error getting real-time data:', error);
+            }
+        }
+
+        // Try backend API as fallback
+        try {
+            const response = await fetch(`/api/analytics/combined?range=${this.currentTimeRange}`);
+            if (response.ok) {
+                const apiData = await response.json();
+                if (apiData.success) {
+                    // Update chart data
+                    this.analyticsData.userActivity = apiData.userActivity;
+                    this.analyticsData.performance = apiData.performance;
+
+                    // Generate quick stats from new data
+                    this.analyticsData.quickStats = this.generateQuickStatsFromData();
+                    this.analyticsData.quickStats.dataSource = 'backend_api';
+
+                    // Update charts and stats
+                    this.updateChartsData();
+                    this.updateQuickStats();
+                    console.log('📊 Updated with backend API data');
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Backend API not available for real-time updates');
+        }
+
+        // Fallback to dummy data updates
         const now = new Date();
         const hour = now.getHours();
-        
+
         // Add new data point
         const newUserData = {
             time: now,
@@ -782,16 +1006,18 @@ class AnalyticsManager {
             pageViews: 0
         };
         newUserData.pageViews = newUserData.activeUsers * (2 + Math.random() * 3);
-        
+
         const newPerfData = {
             time: now,
             loadTime: 800 + Math.random() * 1200,
             responseTime: 50 + Math.random() * 200
         };
-        
+
         // Update arrays (keep last 24 points for 24h view)
         this.analyticsData.userActivity.push(newUserData);
         this.analyticsData.performance.push(newPerfData);
+
+        // Device and pages charts removed - focusing on user activity and performance only
         
         if (this.analyticsData.userActivity.length > 24) {
             this.analyticsData.userActivity.shift();
@@ -801,6 +1027,9 @@ class AnalyticsManager {
         // Update charts
         this.updateChartsData();
         this.updateQuickStats();
+
+        // Refresh chart indicators to show current data source
+        this.addChartDataIndicators();
     }
     
     updateChartsData() {

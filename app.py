@@ -20,7 +20,27 @@ import base64
 from PIL import Image as PILImage, ImageDraw, ImageFont
 import tempfile
 
+# Import analytics data blueprint
+from api.analytics_data import analytics_data_bp
+
+# Import session tracker
+try:
+    from session_tracker import session_tracker, create_interaction_api
+    SESSION_TRACKING_ENABLED = True
+    print("📊 Session tracking enabled")
+except ImportError:
+    SESSION_TRACKING_ENABLED = False
+    print("⚠️ Session tracking not available")
+
 app = Flask(__name__)
+
+# Register analytics data blueprint
+app.register_blueprint(analytics_data_bp)
+
+# Initialize session tracking
+if SESSION_TRACKING_ENABLED:
+    session_tracker.init_app(app)
+    create_interaction_api(app)
 
 # --- Configuration ---
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_secret_key_here_change_in_production')
@@ -31,7 +51,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-GEOSERVER_BASE_URL = "http://localhost:8080/geoserver"
+GEOSERVER_BASE_URL = "http://localhost:9090/geoserver"
 GEOSERVER_USERNAME = os.environ.get('GEOSERVER_USERNAME', 'admin')
 GEOSERVER_PASSWORD = os.environ.get('GEOSERVER_PASSWORD', 'geoserver')
 
@@ -219,7 +239,16 @@ def login():
             user_data = get_user_by_username(username)
     else:
         # Check user by username or email
+        print(f"🔍 LOGIN: Looking up user '{username}'...")
         user_data = get_user_by_username(username) or get_user_by_email(username)
+        if user_data:
+            print(f"✅ LOGIN: Found user '{username}' in database")
+            print(f"   - Username: {user_data.get('username')}")
+            print(f"   - Email: {user_data.get('email')}")
+            print(f"   - Status: {user_data.get('status')}")
+            print(f"   - Role: {user_data.get('role')}")
+        else:
+            print(f"❌ LOGIN: User '{username}' NOT found in database")
 
     if user_data:
         # Check password - for now using plain text comparison
@@ -419,20 +448,10 @@ def admin_required(f):
     """Decorator to require admin role for routes"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        print(f"Admin check for route: {f.__name__}")
-        print(f"Admin check - Session data: {dict(session)}")
-        print(f"Logged in: {session.get('logged_in')}")
-        print(f"User type: {session.get('user_type')}")
-        print(f"Username: {session.get('username')}")
-
         if not session.get('logged_in'):
-            print("Redirecting to login - not logged in")
             return redirect(url_for('login'))
         if session.get('user_type') != 'admin':
-            print(f"Access denied - user type is {session.get('user_type')}, not admin")
             return jsonify({'error': 'Admin access required'}), 403
-
-        print("Admin check passed - proceeding to route")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -441,26 +460,20 @@ def admin_required(f):
 def index():
     return render_template('index.html')
 
-@app.route('/test-session')
-def test_session():
-    """Test route to check session data"""
-    return jsonify({
-        'session_data': dict(session),
-        'logged_in': session.get('logged_in'),
-        'username': session.get('username'),
-        'user_type': session.get('user_type'),
-        'user_id': session.get('user_id')
-    })
 
-@app.route('/dashboard-test')
-def dashboard_test():
-    """Test dashboard without admin_required decorator"""
-    return f"Dashboard test - Session: {dict(session)}"
+
+
+
+
+
+
 
 @app.route('/dashboard')
-@admin_required
+@login_required
 def dashboard():
-    return render_template('dashboard.html')
+    """Dashboard accessible to all logged-in users"""
+    user_type = session.get('user_type', 'user')
+    return render_template('dashboard.html', user_type=user_type)
 
 @app.route('/profile')
 def profile():
@@ -534,11 +547,22 @@ def get_storage_stats():
 @app.route('/api/dashboard/user_activity')
 @admin_required
 def get_user_activity():
-    """Get user activity analytics"""
+    """Get user activity analytics - real data with fallback to dummy data"""
     from datetime import datetime, timedelta
     import random
 
-    # Simulate user activity data (in production, query from database)
+    # Try to get real analytics data first
+    try:
+        # Check if we have real analytics data in database/session storage
+        # This would connect to your actual analytics database
+        real_data = get_real_analytics_data()
+        if real_data and real_data.get('has_data'):
+            return jsonify(real_data)
+    except Exception as e:
+        print(f"Could not fetch real analytics data: {e}")
+
+    # Fallback to simulated data if real data is not available
+    print("Using dummy analytics data as fallback")
     now = datetime.now()
     activity_data = []
 
@@ -563,8 +587,103 @@ def get_user_activity():
         'weekly_activity': activity_data,
         'current_users': current_users,
         'total_users': 15,
-        'active_sessions': 3
+        'active_sessions': 3,
+        'data_source': 'dummy'
     })
+
+def get_real_analytics_data():
+    """
+    Get real analytics data from database/storage
+    This function should be implemented to connect to your actual analytics database
+    """
+    try:
+        # Example: Connect to your analytics database
+        # This could be Firebase, PostgreSQL, MongoDB, etc.
+
+        # Check if we have any real session data
+        from datetime import datetime, timedelta
+
+        # Check if there are active sessions with real data
+        # This is a placeholder - implement your actual data source
+
+        # Example structure of what real data should look like:
+        real_analytics = {
+            'has_data': False,  # Set to True when real data is available
+            'weekly_activity': [],
+            'current_users': [],
+            'active_sessions': 0,
+            'total_users': 0,
+            'data_source': 'real',
+            'last_updated': datetime.now().isoformat()
+        }
+
+        # TODO: Implement actual data fetching logic here
+        # Example:
+        # - Query user sessions from database
+        # - Get page view analytics
+        # - Calculate real metrics
+
+        return real_analytics
+
+    except Exception as e:
+        print(f"Error fetching real analytics: {e}")
+        return None
+
+@app.route('/api/analytics/realtime')
+@admin_required
+def get_realtime_analytics():
+    """Get real-time analytics data for the analytics dashboard"""
+    try:
+        # Try to get real analytics data first
+        real_data = get_real_analytics_data()
+        if real_data and real_data.get('has_data'):
+            return jsonify(real_data)
+
+        # Fallback to dummy data with realistic patterns
+        from datetime import datetime, timedelta
+        import random
+
+        now = datetime.now()
+
+        # Generate realistic quick stats
+        quick_stats = {
+            'activeUsers': random.randint(15, 45),
+            'avgLoadTime': random.randint(800, 2000),
+            'bounceRate': random.randint(25, 45),
+            'pageViews': random.randint(150, 400),
+            'uptime': round(random.uniform(99.5, 99.9), 1),
+            'errorCount': random.randint(0, 5)
+        }
+
+        # Generate user activity data for last 24 hours
+        user_activity = []
+        for i in range(24):
+            hour_time = now - timedelta(hours=i)
+            hour = hour_time.hour
+
+            # Realistic user patterns based on time of day
+            if 9 <= hour <= 17:  # Work hours
+                base_users = random.randint(20, 40)
+            elif 18 <= hour <= 22:  # Evening
+                base_users = random.randint(10, 25)
+            else:  # Night/early morning
+                base_users = random.randint(2, 10)
+
+            user_activity.append({
+                'time': hour_time.isoformat(),
+                'activeUsers': base_users,
+                'pageViews': base_users * random.randint(2, 5)
+            })
+
+        return jsonify({
+            'quickStats': quick_stats,
+            'userActivity': user_activity,
+            'dataSource': 'dummy',
+            'lastUpdated': now.isoformat()
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard/project_performance')
 @admin_required
@@ -888,49 +1007,7 @@ def delete_user(user_id):
         print(f"Error deleting user: {e}")
         return jsonify({'success': False, 'message': 'Failed to delete user'}), 500
 
-@app.route('/api/test/users')
-def test_users():
-    """Test endpoint to check users without admin requirement"""
-    try:
-        print("🔍 TEST: Checking users without admin requirement...")
-        users = get_all_users()
 
-        # If no users exist, create a test admin user
-        if len(users) == 0:
-            print("🔍 No users found, creating test admin user...")
-            test_admin = {
-                'username': 'admin',
-                'email': 'admin@divyadrishti.com',
-                'password': 'admin123',  # Plain text for now (matches current system)
-                'role': 'admin',
-                'status': 'approved',
-                'full_name': 'System Administrator',
-                'created_date': datetime.now(),
-                'last_login': datetime.now(),
-                'login_count': 1
-            }
-
-            # Add to Firestore
-            doc_ref = db.collection(Collections.USERS).add(test_admin)
-            test_admin['id'] = doc_ref[1].id
-            users = [test_admin]
-            print("🔍 Test admin user created!")
-
-        return jsonify({
-            'success': True,
-            'user_count': len(users),
-            'users': users[:3] if users else [],  # Return first 3 users as sample
-            'session_data': dict(session)
-        })
-    except Exception as e:
-        import traceback
-        print(f"🔍 TEST Error: {e}")
-        print(f"🔍 TEST Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'session_data': dict(session)
-        })
 
 @app.route('/api/dashboard/users', methods=['POST'])
 @admin_required
@@ -970,7 +1047,20 @@ def create_user():
 
         # Add to Firestore
         doc_ref = db.collection(Collections.USERS).add(user_data)
-        print(f"User created with ID: {doc_ref[1].id}")
+        user_id = doc_ref[1].id
+        print(f"✅ User created with ID: {user_id}")
+
+        # Debug: Verify the user was actually created
+        created_user = get_user_by_username(data['username'])
+        if created_user:
+            print(f"✅ VERIFICATION: User {data['username']} found in database after creation")
+            print(f"   - Username: {created_user.get('username')}")
+            print(f"   - Email: {created_user.get('email')}")
+            print(f"   - Password: {created_user.get('password')}")
+            print(f"   - Status: {created_user.get('status')}")
+            print(f"   - Role: {created_user.get('role')}")
+        else:
+            print(f"❌ VERIFICATION FAILED: User {data['username']} NOT found in database after creation!")
 
         # Log the activity
         add_user_activity(session.get('user_id'), 'user_creation', {
@@ -1783,6 +1873,32 @@ def create_color_line(color_hex):
     
     return ColorLine(color_hex)
 
+# Test route for i18n
+@app.route('/test_i18n')
+def test_i18n():
+    """Test page for internationalization"""
+    from flask import send_from_directory
+    return send_from_directory('.', 'test_i18n.html')
+
+# Test route for auto-translation
+@app.route('/test_auto_translate')
+def test_auto_translate():
+    """Test page for auto-translation system"""
+    from flask import send_from_directory
+    return send_from_directory('.', 'test_auto_translate.html')
+
+# Translation API configuration
+@app.route('/api/translate/config')
+def get_translate_config():
+    """Get translation API configuration"""
+    # In production, you would set this as an environment variable
+    # For now, we'll return a config that enables fallback translation
+    return jsonify({
+        'apiKey': None,  # Set your Google Translate API key here
+        'fallbackEnabled': True,
+        'supportedLanguages': ['en', 'hi']
+    })
+
 # API Health endpoint for analytics monitoring
 @app.route('/api/health')
 def api_health():
@@ -1824,6 +1940,94 @@ def api_health():
             'error': str(e)
         }), 500
 
+@app.route('/api/system/metrics')
+@admin_required
+def get_system_metrics():
+    """Get real-time system performance metrics"""
+    try:
+        import psutil
+        import platform
+
+        # CPU metrics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        cpu_freq = psutil.cpu_freq()
+
+        # Memory metrics
+        memory = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+
+        # Disk metrics
+        disk_usage = psutil.disk_usage('/' if os.name != 'nt' else 'C:')
+        disk_io = psutil.disk_io_counters()
+
+        # Network metrics
+        network_io = psutil.net_io_counters()
+        network_connections = len(psutil.net_connections())
+
+        # Process metrics
+        process_count = len(psutil.pids())
+
+        # System uptime
+        boot_time = psutil.boot_time()
+        uptime_seconds = time.time() - boot_time
+
+        return jsonify({
+            'timestamp': datetime.now().isoformat(),
+            'cpu': {
+                'percent': round(cpu_percent, 1),
+                'count': cpu_count,
+                'frequency_mhz': round(cpu_freq.current, 0) if cpu_freq else None,
+                'load_avg': os.getloadavg() if hasattr(os, 'getloadavg') else None
+            },
+            'memory': {
+                'total_gb': round(memory.total / (1024**3), 2),
+                'used_gb': round(memory.used / (1024**3), 2),
+                'available_gb': round(memory.available / (1024**3), 2),
+                'percent': round(memory.percent, 1),
+                'swap_total_gb': round(swap.total / (1024**3), 2),
+                'swap_used_gb': round(swap.used / (1024**3), 2),
+                'swap_percent': round(swap.percent, 1)
+            },
+            'disk': {
+                'total_gb': round(disk_usage.total / (1024**3), 2),
+                'used_gb': round(disk_usage.used / (1024**3), 2),
+                'free_gb': round(disk_usage.free / (1024**3), 2),
+                'percent': round((disk_usage.used / disk_usage.total) * 100, 1),
+                'read_mb': round(disk_io.read_bytes / (1024**2), 2) if disk_io else 0,
+                'write_mb': round(disk_io.write_bytes / (1024**2), 2) if disk_io else 0
+            },
+            'network': {
+                'bytes_sent_mb': round(network_io.bytes_sent / (1024**2), 2),
+                'bytes_recv_mb': round(network_io.bytes_recv / (1024**2), 2),
+                'packets_sent': network_io.packets_sent,
+                'packets_recv': network_io.packets_recv,
+                'connections': network_connections,
+                'speed_mbps': round((network_io.bytes_sent + network_io.bytes_recv) / (1024**2), 2)
+            },
+            'system': {
+                'platform': platform.system(),
+                'platform_version': platform.version(),
+                'architecture': platform.architecture()[0],
+                'hostname': platform.node(),
+                'uptime_hours': round(uptime_seconds / 3600, 1),
+                'process_count': process_count,
+                'python_version': platform.python_version()
+            }
+        }), 200
+
+    except ImportError:
+        return jsonify({
+            'error': 'psutil not available - install with: pip install psutil',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+    except Exception as e:
+        app.logger.error(f"Error getting system metrics: {e}")
+        return jsonify({
+            'error': f'Failed to get system metrics: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 # Analytics API endpoints
 @app.route('/api/analytics/track', methods=['POST'])
 def track_analytics():
@@ -1852,3 +2056,4 @@ def track_analytics():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+

@@ -9,6 +9,13 @@ class SystemHealthMonitor {
             network: { status: 'unknown', lastCheck: null }
         };
         this.checkInterval = 60000; // 1 minute
+        // Throttling mechanism for specific notification types
+        this.notificationThrottling = {
+            'Slow API Response': {
+                lastNotified: null,
+                throttleDuration: 60 * 60 * 1000 // 1 hour in milliseconds
+            }
+        };
         this.init();
     }
     
@@ -127,13 +134,24 @@ class SystemHealthMonitor {
                 });
             } else if (responseTime > 3000) {
                 this.updateHealthStatus('api', 'warning');
-                await this.createHealthNotification({
-                    type: 'warning',
-                    title: 'API Performance Issue',
-                    message: `API response time is ${responseTime}ms. Service may be slow.`,
-                    priority: 'medium',
-                    category: 'system'
-                });
+
+                // Check if we should throttle this notification
+                const notificationType = 'Slow API Response';
+                if (!this.shouldThrottleNotification(notificationType)) {
+                    await this.createHealthNotification({
+                        type: 'warning',
+                        title: 'API Performance Issue',
+                        message: `API response time is ${responseTime}ms. Service may be slow.`,
+                        priority: 'medium',
+                        category: 'system'
+                    });
+                    // Mark this notification type as sent
+                    this.markNotificationSent(notificationType);
+                    console.log(`Slow API Response notification sent. Next notification allowed after: ${new Date(Date.now() + this.notificationThrottling[notificationType].throttleDuration).toLocaleString()}`);
+                } else {
+                    const nextAllowedTime = new Date(this.notificationThrottling[notificationType].lastNotified + this.notificationThrottling[notificationType].throttleDuration);
+                    console.log(`Slow API Response notification throttled. Response time: ${responseTime}ms. Next notification allowed at: ${nextAllowedTime.toLocaleString()}`);
+                }
             } else {
                 this.updateHealthStatus('api', 'healthy');
             }
@@ -219,6 +237,33 @@ class SystemHealthMonitor {
             status: status,
             lastCheck: new Date()
         };
+    }
+
+    // Check if a notification type should be throttled
+    shouldThrottleNotification(notificationType) {
+        const throttleConfig = this.notificationThrottling[notificationType];
+        if (!throttleConfig) {
+            return false; // No throttling configured for this type
+        }
+
+        const now = Date.now();
+        const lastNotified = throttleConfig.lastNotified;
+
+        // If never notified before, allow notification
+        if (!lastNotified) {
+            return false;
+        }
+
+        // Check if enough time has passed since last notification
+        const timeSinceLastNotification = now - lastNotified;
+        return timeSinceLastNotification < throttleConfig.throttleDuration;
+    }
+
+    // Mark a notification type as having been sent
+    markNotificationSent(notificationType) {
+        if (this.notificationThrottling[notificationType]) {
+            this.notificationThrottling[notificationType].lastNotified = Date.now();
+        }
     }
     
     updateSystemStatusDisplay() {

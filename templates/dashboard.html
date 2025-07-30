@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Drone Application & Research Center</title>
+    <title>{% if user_type == 'admin' %}Admin {% endif %}Dashboard - Drone Application & Research Center</title>
 
     <!-- External Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
@@ -22,6 +22,9 @@
     <!-- Load theme immediately to prevent flash -->
     <script src="{{ url_for('static', filename='js/theme-loader.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+
+    <!-- Aggressive Translation System -->
+    <script src="{{ url_for('static', filename='js/aggressive-translator.js') }}"></script>
 </head>
 <body>
     <!-- Header -->
@@ -32,27 +35,31 @@
                     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="header-logo">
                 </div>
                 <div class="title-container">
-                    <h1>Admin Dashboard</h1>
-                    <h2>Drone Application & Research Center</h2>
+                    <h1>{% if user_type == 'admin' %}<span data-i18n="adminDashboard">Admin Dashboard</span>{% else %}<span data-i18n="dashboard">Dashboard</span>{% endif %}</h1>
+                    <h2 data-i18n="appTitle">Drone Application & Research Center</h2>
                 </div>
             </div>
             <div class="header-right">
                 <div class="nav-links">
                     <a href="/" class="nav-link">
-                        <i class="fas fa-map"></i> Map View
+                        <i class="fas fa-map"></i> <span data-i18n="mapView">Map View</span>
                     </a>
                     <a href="/dashboard" class="nav-link active">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                        <i class="fas fa-tachometer-alt"></i> <span data-i18n="dashboard">Dashboard</span>
                     </a>
                     <a href="/profile" class="nav-link">
-                        <i class="fas fa-user-circle"></i> Profile
+                        <i class="fas fa-user-circle"></i> <span data-i18n="profile">Profile</span>
                     </a>
                 </div>
                 <div class="user-info">
-                    <span class="welcome-text">Welcome, {{ session.username }}</span>
+                    <span class="welcome-text"><span data-i18n="welcome">Welcome</span>, {{ session.username }}</span>
                     <a href="/logout" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span>
                     </a>
+                </div>
+                <div class="language-switch">
+                    <button id="lang-en" class="lang-btn active">English</button>
+                    <button id="lang-hi" class="lang-btn">हिंदी</button>
                 </div>
             </div>
         </div>
@@ -128,105 +135,46 @@
             </div>
         </div>
 
-        <!-- Additional System Details Bar -->
-        <div class="system-details-bar">
-            <div class="detail-group">
-                <span class="detail-label">API:</span>
-                <span class="detail-status online">
-                    <span class="status-dot online"></span>
-                    Online
-                </span>
+        <!-- Modern System Status Bar -->
+        <div class="modern-status-bar">
+            <div class="status-pill" id="api-status">
+                <span class="status-dot online"></span>
+                <span class="status-text">API</span>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Database:</span>
-                <span class="detail-status online">
-                    <span class="status-dot online"></span>
-                    Connected
-                </span>
+            <div class="status-pill" id="database-status">
+                <span class="status-dot online"></span>
+                <span class="status-text">DATABASE</span>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Frontend:</span>
-                <span class="detail-status critical">
-                    <span class="status-dot critical"></span>
-                    Critical
-                </span>
+            <div class="status-pill" id="frontend-status">
+                <span class="status-dot online"></span>
+                <span class="status-text">FRONTEND</span>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Analytics:</span>
-                <span class="detail-status online">
-                    <span class="status-dot online"></span>
-                    Active
-                </span>
+            <div class="status-pill" id="analytics-status">
+                <span class="status-dot online"></span>
+                <span class="status-text">ANALYTICS</span>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Notifications:</span>
-                <span class="detail-status online">
-                    <span class="status-dot online"></span>
-                    Active
-                </span>
+            <div class="status-pill" id="notifications-status">
+                <span class="status-dot online"></span>
+                <span class="status-text">NOTIFICATIONS</span>
             </div>
-            <div class="detail-group">
-                <span class="detail-label">Last Updated:</span>
-                <span class="detail-time">12:26:29 AM</span>
-            </div>
-            <div class="detail-group">
+            <div class="status-actions">
+                <span class="last-updated" id="last-updated">Last updated: <span id="update-time">12:26:29 AM</span></span>
                 <button class="refresh-btn" onclick="refreshSystemStatus()">
-                    <i class="fas fa-sync-alt"></i> Refresh
+                    <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Quick Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-hdd"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 id="storage-usage">Loading...</h3>
-                    <p>Storage Usage</p>
-                </div>
-            </div>
 
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 id="active-users">Loading...</h3>
-                    <p>Active Users</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-project-diagram"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 id="total-projects">Loading...</h3>
-                    <p>Total Projects</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 id="alert-count">Loading...</h3>
-                    <p>Active Alerts</p>
-                </div>
-            </div>
-        </div>
 
         <!-- Main Dashboard Grid -->
         <div class="dashboard-grid">
             <!-- System Monitoring - Full Width -->
             <div class="dashboard-card full-width storage-monitoring">
                 <div class="card-header">
-                    <h3><i class="fas fa-desktop"></i> System Performance Monitor</h3>
+                    <h3><i class="fas fa-desktop"></i> <span data-i18n="systemPerformanceMonitor">System Performance Monitor</span></h3>
                     <div class="monitor-controls">
-                        <span class="update-frequency">Update: <span id="update-timer">1s</span></span>
+                        <span class="update-frequency"><span data-i18n="update">Update</span>: <span id="update-timer">1s</span></span>
                         <button class="refresh-btn" onclick="refreshStorageData()">
                             <i class="fas fa-sync-alt"></i>
                         </button>
@@ -385,49 +333,7 @@
 
                 <div class="card-content">
 
-                    <!-- Quick Stats Row -->
-                    <div class="quick-stats-row">
-                        <div class="quick-stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="active-users-count">0</div>
-                                <div class="stat-label">Active Users</div>
-                                <div class="stat-change positive" id="users-change">+12%</div>
-                            </div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="avg-load-time">0ms</div>
-                                <div class="stat-label">Avg Load Time</div>
-                                <div class="stat-change negative" id="load-time-change">+5%</div>
-                            </div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-server"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="uptime-percentage">99.9%</div>
-                                <div class="stat-label">Uptime</div>
-                                <div class="stat-change positive" id="uptime-change">+0.1%</div>
-                            </div>
-                        </div>
-                        <div class="quick-stat-item">
-                            <div class="stat-icon">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="error-count">0</div>
-                                <div class="stat-label">Errors (24h)</div>
-                                <div class="stat-change positive" id="errors-change">-15%</div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Quick Stats Row Removed - Using top dashboard stats instead -->
 
                     <!-- Charts Section -->
                     <div class="charts-grid">
@@ -451,18 +357,7 @@
                             </div>
                             <canvas id="performance-chart"></canvas>
                         </div>
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h4>Device Types</h4>
-                            </div>
-                            <canvas id="device-chart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h4>Top Pages</h4>
-                            </div>
-                            <canvas id="pages-chart"></canvas>
-                        </div>
+
 
 
                     </div>
@@ -578,15 +473,16 @@
                 </div>
             </div>
 
-            <!-- Role Management - Full Width -->
+            <!-- Role Management - Full Width (Admin Only) -->
+            {% if user_type == 'admin' %}
             <div class="dashboard-card full-width">
                 <div class="card-header">
-                    <h3><i class="fas fa-user-cog"></i> User Management & Role Administration</h3>
+                    <h3><i class="fas fa-user-cog"></i> <span data-i18n="userManagement">User Management & Role Administration</span></h3>
                     <div class="header-actions">
                         <button class="add-user-btn" onclick="showAddUserModal()">
-                            <i class="fas fa-plus"></i> Add User
+                            <i class="fas fa-plus"></i> <span data-i18n="addUser">Add User</span>
                         </button>
-                        <span class="pending-count" id="pending-count">0 Pending</span>
+                        <span class="pending-count" id="pending-count">0 <span data-i18n="pending">Pending</span></span>
                     </div>
                 </div>
                 <div class="card-content">
@@ -594,12 +490,12 @@
                         <table class="users-table" id="users-table">
                             <thead>
                                 <tr>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Last Login</th>
-                                    <th>Actions</th>
+                                    <th data-i18n="username">Username</th>
+                                    <th data-i18n="email">Email</th>
+                                    <th data-i18n="role">Role</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="lastLogin">Last Login</th>
+                                    <th data-i18n="actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="users-table-body">
@@ -609,6 +505,54 @@
                                     </td>
                                 </tr>
                             </tbody>
+                            <script>
+                                // Auto-load users when admin section renders
+                                function loadUsersImmediate() {
+                                    fetch('/api/dashboard/users')
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            const tableBody = document.getElementById('users-table-body');
+                                            if (tableBody && data.users) {
+                                                tableBody.innerHTML = '';
+
+                                                data.users.forEach(user => {
+                                                    const row = document.createElement('tr');
+                                                    const lastLogin = new Date(user.last_login).toLocaleDateString();
+
+                                                    row.innerHTML = `
+                                                        <td>${user.username}</td>
+                                                        <td>${user.email}</td>
+                                                        <td><span class="user-role ${user.role}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span></td>
+                                                        <td><span class="user-status ${user.status}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span></td>
+                                                        <td>${lastLogin}</td>
+                                                        <td>
+                                                            <button class="action-btn edit-btn" onclick="editUser('${user.id}')" title="Edit User">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="action-btn delete-btn" onclick="deleteUser('${user.id}')" title="Delete User">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    `;
+                                                    tableBody.appendChild(row);
+                                                });
+
+                                                // Fix action button icons
+                                                setTimeout(() => {
+                                                    if (typeof fixActionButtonIcons === 'function') {
+                                                        fixActionButtonIcons();
+                                                    }
+                                                }, 200);
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Error loading users:', error);
+                                        });
+                                }
+
+                                // Execute immediately
+                                loadUsersImmediate();
+                            </script>
                         </table>
                     </div>
                     <div class="pending-users-container" id="pending-users-container">
@@ -616,6 +560,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             </div> <!-- End two-column-container -->
 
         </div>
@@ -751,45 +696,54 @@
                 <form id="user-form">
                     <input type="hidden" id="user-id">
                     <div class="form-group">
-                        <label for="user-username">Username:</label>
+                        <label for="user-username" data-i18n="username">Username:</label>
                         <input type="text" id="user-username" required>
                     </div>
                     <div class="form-group">
-                        <label for="user-email">Email:</label>
+                        <label for="user-email" data-i18n="email">Email:</label>
                         <input type="email" id="user-email" required>
                     </div>
                     <div class="form-group">
-                        <label for="user-fullname">Full Name:</label>
+                        <label for="user-fullname" data-i18n="fullName">Full Name:</label>
                         <input type="text" id="user-fullname" required>
                     </div>
                     <div class="form-group">
-                        <label for="user-password">Password:</label>
-                        <input type="password" id="user-password" placeholder="Leave blank to keep current password">
+                        <label for="user-password" data-i18n="password">Password:</label>
+                        <input type="password" id="user-password" placeholder="Leave blank to keep current password" maxlength="50">
                         <small>Required for new users, optional for existing users</small>
                     </div>
                     <div class="form-group">
-                        <label for="user-role">Role:</label>
+                        <label for="user-role" data-i18n="role">Role:</label>
                         <select id="user-role" required>
-                            <option value="user">User</option>
-                            <option value="analyst">Analyst</option>
-                            <option value="admin">Admin</option>
+                            <option value="user" data-i18n="user">User</option>
+                            <option value="analyst" data-i18n="analyst">Analyst</option>
+                            <option value="admin" data-i18n="admin">Admin</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="user-status">Status:</label>
+                        <label for="user-status" data-i18n="status">Status:</label>
                         <select id="user-status" required>
-                            <option value="approved">Approved</option>
-                            <option value="suspended">Suspended</option>
+                            <option value="approved" data-i18n="approved">Approved</option>
+                            <option value="suspended" data-i18n="suspended">Suspended</option>
                         </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeUserModal()">Cancel</button>
-                <button type="button" class="btn-primary" onclick="saveUser()">Save</button>
+                <button type="button" class="btn-secondary" onclick="closeUserModal()" data-i18n="cancel">Cancel</button>
+                <button type="button" class="btn-primary" onclick="saveUser()" data-i18n="save">Save</button>
             </div>
         </div>
     </div>
+
+    <!-- Pass user type to JavaScript -->
+    <script>
+        // Make user type available to JavaScript
+        window.USER_TYPE = '{{ user_type }}';
+        window.USERNAME = '{{ session.username }}';
+        console.log('🔍 User type from template:', window.USER_TYPE);
+        console.log('🔍 Username from template:', window.USERNAME);
+    </script>
 
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
@@ -798,7 +752,8 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     <script src="{{ url_for('static', filename='js/notification-triggers.js') }}"></script>
     <script src="{{ url_for('static', filename='js/system-health.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/auto-notifications.js') }}"></script>
+    <!-- Auto-notifications disabled to reduce server load -->
+    <!-- <script src="{{ url_for('static', filename='js/auto-notifications.js') }}"></script> -->
 
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -810,13 +765,13 @@
     <script src="{{ url_for('static', filename='js/real-analytics.js') }}"></script>
     <script src="{{ url_for('static', filename='js/real-analytics-processor.js') }}"></script>
 
-    <!-- Enhanced Performance Monitoring -->
-    <script src="{{ url_for('static', filename='js/performance-monitor.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/error-tracker.js') }}"></script>
+    <!-- Enhanced Performance Monitoring (Disabled to reduce server load) -->
+    <!-- <script src="{{ url_for('static', filename='js/performance-monitor.js') }}"></script> -->
+    <!-- <script src="{{ url_for('static', filename='js/error-tracker.js') }}"></script> -->
 
-    <!-- Advanced User Interaction Analytics -->
-    <script src="{{ url_for('static', filename='js/interaction-tracker.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/journey-analyzer.js') }}"></script>
+    <!-- Advanced User Interaction Analytics (Disabled to reduce server load) -->
+    <!-- <script src="{{ url_for('static', filename='js/interaction-tracker.js') }}"></script> -->
+    <!-- <script src="{{ url_for('static', filename='js/journey-analyzer.js') }}"></script> -->
 
     <!-- Analytics Dashboard -->
     <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
@@ -828,6 +783,10 @@
     <script src="{{ url_for('static', filename='js/realtime-dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/system-status-monitor.js') }}"></script>
 
+
+
+
+
     <!-- System Status Functions -->
     <script>
         // System status refresh function
@@ -837,19 +796,21 @@
             // Show loading state
             const refreshBtn = document.querySelector('.refresh-btn');
             if (refreshBtn) {
-                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 refreshBtn.disabled = true;
             }
 
-            // Simulate refresh (in real app, this would fetch from API)
+            // Simulate API calls and update status
             setTimeout(() => {
+                updateSystemStatus();
+
                 if (refreshBtn) {
-                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
                     refreshBtn.disabled = false;
                 }
 
                 // Update timestamp
-                const timeElement = document.querySelector('.detail-time');
+                const timeElement = document.getElementById('update-time');
                 if (timeElement) {
                     timeElement.textContent = new Date().toLocaleTimeString();
                 }
@@ -857,42 +818,228 @@
                 if (typeof showToast === 'function') {
                     showToast('System status refreshed!', 'success');
                 }
-            }, 2000);
+            }, 1500);
         }
+
+        // Status persistence to prevent rapid changes
+        let lastStatusUpdate = {};
+        let statusStabilityCounter = 0;
+
+        // Update system status indicators with stability
+        function updateSystemStatus() {
+            // Increment stability counter
+            statusStabilityCounter++;
+
+            // Only allow status changes every 5 updates (5 minutes) for stability
+            const allowStatusChange = statusStabilityCounter % 5 === 0;
+
+            // Very stable status simulation - mostly online with rare warnings
+            const statusItems = [
+                {
+                    id: 'api-status',
+                    status: allowStatusChange && Math.random() > 0.98 ? 'warning' : (lastStatusUpdate['api-status'] || 'online')
+                },
+                {
+                    id: 'database-status',
+                    status: allowStatusChange && Math.random() > 0.99 ? 'warning' : (lastStatusUpdate['database-status'] || 'online')
+                },
+                {
+                    id: 'frontend-status',
+                    status: 'online' // Always online
+                },
+                {
+                    id: 'analytics-status',
+                    status: allowStatusChange && Math.random() > 0.97 ? 'warning' : (lastStatusUpdate['analytics-status'] || 'online')
+                },
+                {
+                    id: 'notifications-status',
+                    status: 'online' // Always online
+                }
+            ];
+
+            // Update last status for persistence
+            statusItems.forEach(item => {
+                lastStatusUpdate[item.id] = item.status;
+            });
+
+            statusItems.forEach(item => {
+                const element = document.getElementById(item.id);
+                if (element) {
+                    const dot = element.querySelector('.status-dot');
+                    const text = element.querySelector('.status-text');
+
+                    // Store original text content to prevent overwriting
+                    if (!text.dataset.originalText) {
+                        text.dataset.originalText = text.textContent;
+                    }
+
+                    // Remove existing status classes
+                    dot.classList.remove('online', 'offline', 'warning');
+                    text.classList.remove('online', 'offline', 'warning');
+
+                    // Add new status
+                    dot.classList.add(item.status);
+                    text.classList.add(item.status);
+
+                    // Ensure text content remains unchanged (prevent "DEGRADED" override)
+                    text.textContent = text.dataset.originalText;
+
+                    // Update pill background based on status
+                    if (item.status === 'online') {
+                        element.style.borderColor = 'rgba(40, 167, 69, 0.3)';
+                        element.style.background = 'rgba(40, 167, 69, 0.1)';
+                    } else if (item.status === 'warning') {
+                        element.style.borderColor = 'rgba(255, 193, 7, 0.3)';
+                        element.style.background = 'rgba(255, 193, 7, 0.1)';
+                    } else {
+                        element.style.borderColor = 'rgba(220, 53, 69, 0.3)';
+                        element.style.background = 'rgba(220, 53, 69, 0.1)';
+                    }
+                }
+            });
+        }
+
+        // Auto-refresh system status every 60 seconds (reduced frequency)
+        function startLiveStatusUpdates() {
+            // Initial update
+            updateSystemStatus();
+
+            // Set up auto-refresh with longer interval for stability
+            setInterval(() => {
+                updateSystemStatus();
+                const timeElement = document.getElementById('update-time');
+                if (timeElement) {
+                    timeElement.textContent = new Date().toLocaleTimeString();
+                }
+            }, 300000); // Update every 5 minutes to reduce server load
+        }
+
+        // Fix action button icons
+        function fixActionButtonIcons() {
+            const actionButtons = document.querySelectorAll('.action-btn');
+            actionButtons.forEach(btn => {
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    // Ensure proper Font Awesome classes
+                    if (!icon.classList.contains('fas') && !icon.classList.contains('fa')) {
+                        icon.classList.add('fas');
+                    }
+
+                    // Force icon visibility
+                    icon.style.display = 'inline-block';
+                    icon.style.fontFamily = '"Font Awesome 6 Free"';
+                    icon.style.fontWeight = '900';
+
+                    // Add fallback text if icon doesn't load
+                    if (icon.classList.contains('fa-edit')) {
+                        icon.setAttribute('data-fallback', '✏️');
+                    } else if (icon.classList.contains('fa-trash')) {
+                        icon.setAttribute('data-fallback', '🗑️');
+                    }
+                }
+            });
+        }
+
+        // Start live updates when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the dashboard
+            if (typeof initializeDashboard === 'function') {
+                initializeDashboard();
+            }
+
+            // Setup auto refresh
+            if (typeof setupAutoRefresh === 'function') {
+                setupAutoRefresh();
+            }
+
+
+
+            startLiveStatusUpdates();
+
+            // Fix action button icons
+            setTimeout(() => {
+                fixActionButtonIcons();
+            }, 500);
+
+            // Remove any existing system status widgets
+            setTimeout(() => {
+                const existingWidgets = document.querySelectorAll('#system-status-widget, .system-status-widget');
+                existingWidgets.forEach(widget => {
+                    console.log('🗑️ Removing old system status widget');
+                    widget.remove();
+                });
+            }, 1000);
+        });
 
         // User Management Functions are handled by dashboard.js
 
-        // Test function to debug user loading
-        async function testUserLoading() {
-            console.log('🔍 Testing user loading...');
 
-            try {
-                // Test without admin requirement
-                console.log('🔍 Testing /api/test/users...');
-                const testResponse = await fetch('/api/test/users');
-                const testData = await testResponse.json();
-                console.log('🔍 Test response:', testData);
+    </script>
 
-                // Test with admin requirement
-                console.log('🔍 Testing /api/dashboard/users...');
-                const adminResponse = await fetch('/api/dashboard/users');
-                console.log('🔍 Admin response status:', adminResponse.status);
+    <!-- Frontend Activity Tracking -->
+    <script>
+    // Frontend interaction tracking for real-time analytics
+    class FrontendTracker {
+        constructor() {
+            this.pageStartTime = Date.now();
+            this.setupEventListeners();
+            console.log('📊 Frontend activity tracking initialized');
+        }
 
-                if (adminResponse.ok) {
-                    const adminData = await adminResponse.json();
-                    console.log('🔍 Admin response data:', adminData);
-                } else {
-                    const errorText = await adminResponse.text();
-                    console.log('🔍 Admin response error:', errorText);
+        setupEventListeners() {
+            // Track clicks on important elements
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('button, .nav-link, .card-header, .time-range-btn')) {
+                    this.trackInteraction('click', this.getElementSelector(e.target));
                 }
+            });
 
-            } catch (error) {
-                console.error('🔍 Test error:', error);
+            // Track form submissions
+            document.addEventListener('submit', (e) => {
+                this.trackInteraction('form_submit', this.getElementSelector(e.target));
+            });
+
+            // Track page unload (time spent)
+            window.addEventListener('beforeunload', () => {
+                const timeSpent = Math.round((Date.now() - this.pageStartTime) / 1000);
+                this.trackPageTime(timeSpent);
+            });
+        }
+
+        trackInteraction(type, element, metadata = {}) {
+            fetch('/api/track/interaction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: type,
+                    element: element,
+                    metadata: metadata
+                })
+            }).catch(console.error);
+        }
+
+        trackPageTime(timeSpent) {
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/track/page-time', JSON.stringify({
+                    page_url: window.location.pathname,
+                    time_spent: timeSpent
+                }));
             }
         }
 
-        // Auto-run test after page loads
-        setTimeout(testUserLoading, 2000);
+        getElementSelector(element) {
+            if (element.id) return `#${element.id}`;
+            if (element.className) return `.${element.className.split(' ')[0]}`;
+            return element.tagName.toLowerCase();
+        }
+    }
+
+    // Initialize tracker when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        new FrontendTracker();
+    });
     </script>
 </body>
 </html>

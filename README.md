@@ -1,67 +1,138 @@
-# Divyadrishti - Drone Map Application
+# Divyadrishti - Drone Application & Research Center
 
-A comprehensive web-based GIS mapping application for the Uttarakhand Space Application Center that integrates with GeoServer to display and manage geospatial data layers with advanced features including PDF export functionality with visual layer color representation.
+![Divyadrishti Logo](static/images/logo.png)
 
-## Features
+A comprehensive web-based GIS mapping application for the **Uttarakhand Space Application Center** that integrates with GeoServer to display and manage geospatial data layers. Features advanced mapping capabilities, multi-language support, user authentication, admin dashboard, and enhanced PDF export functionality with visual layer color representation.
 
-- **Interactive Web Mapping**: Leaflet-based map interface with multiple base layer options
-- **Multiple Base Maps**: OpenStreetMap, Google Satellite, Google Hybrid, Google Terrain, Esri Satellite, CartoDB variants
-- **GeoServer Integration**: Dynamic loading of raster and vector layers from GeoServer workspaces
-- **Layer Opacity Control**: Individual opacity sliders for each layer (0-100%)
-- **Smart Layer Loading**: Vector layers load without auto-zoom, raster layers auto-fit to bounds
-- **Multi-language Support**: English and Hindi language switching
-- **User Authentication**: Secure login system with captcha verification
-- **Layer Management**: Toggle visibility of different map layers with legends
-- **Location Search**: Search and navigate to specific locations using Nominatim API
-- **Feature Information**: Click on vector layers to get detailed attribute information
-- **Responsive Design**: Mobile-friendly interface with collapsible sidebar
-- **Legend Display**: Dynamic legend generation with opacity controls for active layers
+## ✨ Key Features
+
+### 🗺️ **Advanced Mapping System**
+- **Interactive Map Interface** with Leaflet.js integration and smooth navigation
+- **Multiple Base Layers**: OpenStreetMap, Google Satellite, Google Hybrid, Google Terrain, Esri Satellite, CartoDB variants
+- **Dynamic Layer Management** with real-time loading from GeoServer workspaces
+- **Smart Layer Loading**: Vector layers maintain current view, raster layers auto-fit to bounds
+- **Legend System** with opacity controls (0-100%) and layer management
+- **Search Functionality** for projects and locations with real-time filtering
+- **Zoom Controls** with compass navigation and scale indicators
+- **Feature Information**: Click-to-query functionality with detailed attribute popups
+
+### 🌐 **Multi-Language Support**
+- **Bilingual Interface**: Complete English and Hindi (हिंदी) support
+- **Real-time Language Switching** with instant translation of all UI elements
+- **Dynamic Content Translation** for project names, layer descriptions, and notifications
+- **Persistent Language Preferences** across sessions with localStorage
+- **Comprehensive Translation System** covering buttons, forms, messages, and dynamic content
+
+### 🔐 **User Management & Authentication**
+- **Firebase Authentication** integration with secure token management
+- **Role-based Access Control** (Admin, Analyst, User) with different permission levels
+- **User Registration** with admin approval workflow and email verification
+- **Secure Login System** with CAPTCHA protection and session management
+- **Profile Management** with customizable settings and preferences
+
+### 📊 **Admin Dashboard & Analytics**
+- **System Performance Monitoring** with real-time metrics and health indicators
+- **User Management Interface** for role administration and approval workflows
+- **Analytics Dashboard** with usage statistics, user activity, and system alerts
+- **Real-time Notifications** system with toast messages and status updates
+- **System Health Monitoring** with performance metrics and error tracking
+
+### 🛰️ **Enhanced GeoServer Integration**
+- **Dynamic Workspace Loading** from multiple GeoServer instances
+- **Vector and Raster Layer Support** with intelligent handling
+- **WMS/WFS Protocol Implementation** with GetFeatureInfo functionality
+- **Layer Bounds** automatic fitting and navigation with smooth transitions
+- **Style Color Extraction** from SLD files for visual representation
+- **Legend Generation** with GetLegendGraphic integration
+
+### 📄 **Advanced PDF Export**
 - **Enhanced PDF Export**: Export current map view with layers, metadata, and visual color representation
-- **Map Image Generation**: Composite map images with base layers and GeoServer overlays
-- **Color-Coded Layer Table**: Visual color lines showing actual GeoServer style colors for vector layers
+- **Map Image Generation**: Composite images with base layers and GeoServer overlays
+- **Color-Coded Layer Table**: Visual color lines showing actual GeoServer style colors
+- **Professional Layout**: A4 format with proper headers, metadata, and styling
+- **Metadata Integration**: Location coordinates, address, timestamp, scale information
 
-## Technology Stack
+## 🏗️ Technology Stack
 
-- **Backend**: Python Flask
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Mapping**: Leaflet.js
-- **GIS Server**: GeoServer
-- **Geocoding**: OpenStreetMap Nominatim API
-- **Base Maps**: Multiple providers (Google, Esri, CartoDB)
-- **PDF Generation**: ReportLab with custom Flowables
-- **Image Processing**: Pillow (PIL)
-- **Style Parsing**: Regular expressions for SLD color extraction
+### **Frontend Technologies**
+- **HTML5/CSS3** with responsive design and modern layouts
+- **JavaScript ES6+** with modular architecture and async/await patterns
+- **Leaflet.js** for interactive mapping and geospatial visualization
+- **Font Awesome** for comprehensive iconography
+- **CSS Grid/Flexbox** for responsive layouts and component design
 
-## Prerequisites
+### **Backend Technologies**
+- **Python Flask** web framework with RESTful API architecture
+- **Firebase** for authentication, real-time features, and user management
+- **GeoServer** for geospatial data management and WMS/WFS services
+- **ReportLab** for PDF generation with custom Flowables
+- **Pillow (PIL)** for image processing and composite generation
 
-- Python 3.7+
-- GeoServer instance running on `http://172.16.0.145:8080/geoserver`
-- Internet connection for base map tiles and Nominatim geocoding
+### **Database & Storage**
+- **Firebase Firestore** for user data and application settings
+- **Local Storage** for preferences, caching, and session management
+- **GeoServer** data stores for spatial data and layer management
 
-## Installation
+### **APIs & Services**
+- **OpenStreetMap Nominatim** for geocoding and location search
+- **Google Maps API** for satellite and hybrid base layers
+- **Esri Services** for additional base map options
+- **CartoDB** for light and dark themed base maps
 
-1. Clone the repository:
+## 📋 Prerequisites
+
+- **Python 3.8+** with pip package manager
+- **GeoServer instance** running and accessible (default: `http://172.16.0.145:9090/geoserver`)
+- **Firebase project** with Authentication and Firestore enabled
+- **Internet connection** for base map tiles, geocoding, and Firebase services
+- **Modern web browser** (Chrome 80+, Firefox 75+, Safari 13+, Edge 80+)
+
+## 🚀 Installation & Setup
+
+### **Quick Start**
+
+1. **Clone the Repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/your-org/divyadrishti.git
 cd divyadrishti
 ```
 
-2. Create a virtual environment:
+2. **Create Virtual Environment**
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3. **Install Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Set environment variables (optional):
+4. **Configure Environment Variables**
 ```bash
-export SECRET_KEY="your_secret_key_here"
-export GEOSERVER_USERNAME="admin"
-export GEOSERVER_PASSWORD="geoserver"
+# Create .env file
+cp .env.example .env
+
+# Edit .env with your configuration
+SECRET_KEY="your_secret_key_here"
+GEOSERVER_URL="http://172.16.0.145:9090/geoserver"
+FIREBASE_PROJECT_ID="your_firebase_project_id"
+```
+
+5. **Firebase Configuration**
+```bash
+# Add your Firebase config to static/js/firebase-config.js
+# Get config from Firebase Console > Project Settings > General
+```
+
+6. **Run the Application**
+```bash
+python app.py
+```
+
+7. **Access the Application**
+```
+http://localhost:5000
 ```
 
 ## Configuration
@@ -96,21 +167,46 @@ http://localhost:5000
 
 ```
 divyadrishti/
-├── app.py                 # Main Flask application with API endpoints and PDF export
-├── templates/
-│   ├── index.html        # Main map interface with header and controls
-│   └── login.html        # Login page with captcha
-├── static/
-│   ├── css/
-│   │   ├── style.css     # Main application styles with legend and opacity controls
-│   │   └── login.css     # Login page styles
-│   ├── js/
-│   │   ├── map.js        # Map functionality, GeoServer integration, and layer management
-│   │   └── login.js      # Login form handling with captcha
-│   └── images/
-│       └── logo.png      # Application logo
-├── README.md
-└── requirements.txt
+├── app.py                          # Main Flask application with API endpoints and PDF export
+├── requirements.txt                # Production dependencies
+├── requirements-dev.txt            # Development dependencies
+├── .env.example                    # Environment configuration template
+├── .gitignore                      # Git ignore rules
+├── README.md                      # Project documentation
+├── CHANGELOG.md                   # Version history and changes
+├── api/                           # API modules
+│   └── analytics_data.py          # Analytics data processing
+├── templates/                     # HTML templates
+│   ├── index.html                # Main map interface with header and controls
+│   ├── login.html                # Login page with captcha
+│   ├── register.html             # User registration page
+│   ├── dashboard.html            # Admin dashboard
+│   └── profile.html              # User profile page
+├── static/                        # Static assets
+│   ├── css/                       # Stylesheets
+│   │   ├── style.css             # Main application styles with legend and opacity controls
+│   │   ├── login.css             # Authentication page styles
+│   │   └── dashboard.css         # Admin dashboard styles
+│   ├── js/                        # JavaScript modules
+│   │   ├── map.js                # Core mapping functionality and GeoServer integration
+│   │   ├── aggressive-translator.js # Multi-language translation system
+│   │   ├── dashboard.js          # Admin dashboard logic
+│   │   ├── login.js              # Authentication logic
+│   │   ├── register.js           # Registration logic
+│   │   ├── profile.js            # Profile management
+│   │   ├── firebase-config.js    # Firebase configuration
+│   │   ├── analytics.js          # Analytics tracking
+│   │   ├── notifications.js      # Notification system
+│   │   ├── system-monitor.js     # System monitoring
+│   │   └── theme-loader.js       # Theme management
+│   └── images/                    # Image assets
+│       └── logo.png              # Application logo
+└── docs/                         # Documentation
+    ├── README.md                 # Documentation index
+    ├── API.md                    # API documentation
+    ├── DEPLOYMENT.md             # Deployment guide
+    ├── CONTRIBUTING.md           # Contribution guidelines
+    └── PROJECT_SUMMARY.md        # Project overview
 ```
 
 ## API Endpoints
@@ -333,3 +429,4 @@ To ensure vector layers show colored lines instead of "Default" in PDF exports:
 ### Layer Loading Issues
 - **Vector Layers Auto-Zooming**: Fixed - vector layers now maintain current map view
 - **Raster Layers Not Fitting**: Raster layers automatically zoom to layer bounds as intended
+

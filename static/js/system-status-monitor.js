@@ -35,20 +35,20 @@ class SystemStatusMonitor {
     init() {
         console.log('📊 Initializing System Status Monitor...');
         this.startMonitoring();
-        this.setupStatusDisplay();
+        // this.setupStatusDisplay(); // Disabled - using modern status bar instead
         this.setupHealthChecks();
     }
     
     startMonitoring() {
-        // Monitor system status every 10 seconds
+        // Monitor system status every 5 minutes (reduced frequency)
         setInterval(() => {
             this.updateSystemStatus();
-        }, 10000);
+        }, 300000); // Changed from 10 seconds to 5 minutes
         
-        // Comprehensive health check every minute
+        // Comprehensive health check every 10 minutes (reduced frequency)
         setInterval(() => {
             this.performHealthCheck();
-        }, 60000);
+        }, 600000); // Changed from 1 minute to 10 minutes
         
         // Initial status update
         this.updateSystemStatus();
@@ -327,22 +327,25 @@ class SystemStatusMonitor {
     }
     
     updateStatusDisplays() {
+        // DISABLED - Preventing interference with modern status bar
+        console.log('📊 updateStatusDisplays disabled - using modern status bar instead');
+
         // Update the status widget
-        this.renderStatusWidget();
-        
+        // this.renderStatusWidget();
+
         // Update real-time dashboard if available
-        if (window.realtimeDashboard && typeof window.realtimeDashboard.updateSystemStatus === 'function') {
-            try {
-                window.realtimeDashboard.updateSystemStatus(this.statusData);
-            } catch (error) {
-                console.warn('⚠️ Failed to update real-time dashboard:', error.message);
-            }
-        }
-        
+        // if (window.realtimeDashboard && typeof window.realtimeDashboard.updateSystemStatus === 'function') {
+        //     try {
+        //         window.realtimeDashboard.updateSystemStatus(this.statusData);
+        //     } catch (error) {
+        //         console.warn('⚠️ Failed to update real-time dashboard:', error.message);
+        //     }
+        // }
+
         // Dispatch status update event
-        window.dispatchEvent(new CustomEvent('systemStatusUpdate', {
-            detail: this.statusData
-        }));
+        // window.dispatchEvent(new CustomEvent('systemStatusUpdate', {
+        //     detail: this.statusData
+        // }));
     }
     
     setupHealthChecks() {
@@ -532,25 +535,28 @@ class SystemStatusMonitor {
     }
 
     updateLocalStatusDisplays() {
-        // Update only local DOM elements, avoid calling external systems
-        try {
-            const statusElements = document.querySelectorAll('.system-status');
-            statusElements.forEach(element => {
-                if (element) {
-                    element.className = `system-status ${this.statusData.overall}`;
-                }
-            });
+        // DISABLED - Preventing interference with modern status bar
+        console.log('📊 updateLocalStatusDisplays disabled - using modern status bar instead');
 
-            // Update status text
-            const statusTextElements = document.querySelectorAll('.status-text');
-            statusTextElements.forEach(element => {
-                if (element) {
-                    element.textContent = this.statusData.overall.toUpperCase();
-                }
-            });
-        } catch (displayError) {
-            console.warn('Failed to update local status displays:', displayError.message);
-        }
+        // Update only local DOM elements, avoid calling external systems
+        // try {
+        //     const statusElements = document.querySelectorAll('.system-status');
+        //     statusElements.forEach(element => {
+        //         if (element) {
+        //             element.className = `system-status ${this.statusData.overall}`;
+        //         }
+        //     });
+
+        //     // Update status text
+        //     const statusTextElements = document.querySelectorAll('.status-text');
+        //     statusTextElements.forEach(element => {
+        //         if (element) {
+        //             element.textContent = this.statusData.overall.toUpperCase();
+        //         }
+        //     });
+        // } catch (displayError) {
+        //     console.warn('Failed to update local status displays:', displayError.message);
+        // }
     }
     
     // Public methods
@@ -580,20 +586,24 @@ window.refreshSystemStatus = function() {
     }
 };
 
-// Initialize system status monitor
+// Initialize system status monitor - DISABLED
 document.addEventListener('DOMContentLoaded', function() {
+    // System Status Monitor disabled - using modern status bar instead
+    console.log('📊 System Status Monitor disabled - using modern status bar');
+
     // Prevent multiple initializations
     if (window.systemStatusMonitor) {
         console.warn('⚠️ System Status Monitor already initialized');
         return;
     }
 
-    setTimeout(() => {
-        try {
-            window.systemStatusMonitor = new SystemStatusMonitor();
-            console.warn('📊 System Status Monitor initialized');
-        } catch (error) {
-            console.warn('❌ Failed to initialize System Status Monitor:', error.message);
-        }
-    }, 12000); // Wait for all other systems
+    // Commented out to prevent interference with modern status bar
+    // setTimeout(() => {
+    //     try {
+    //         window.systemStatusMonitor = new SystemStatusMonitor();
+    //         console.warn('📊 System Status Monitor initialized');
+    //     } catch (error) {
+    //         console.warn('❌ Failed to initialize System Status Monitor:', error.message);
+    //     }
+    // }, 12000); // Wait for all other systems
 });

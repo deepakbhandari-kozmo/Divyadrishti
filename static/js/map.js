@@ -1,9 +1,9 @@
 // static/js/map.js
 
 // --- Configuration ---
-const GEOSERVER_WMS_BASE_URL = "http://172.16.0.145:8080/geoserver/";
-const GEOSERVER_WFS_BASE_URL = "http://172.16.0.145:8080/geoserver/";
-const GEOSERVER_LEGEND_GRAPHIC_BASE_URL = "http://172.16.0.145:8080/geoserver/";
+const GEOSERVER_WMS_BASE_URL = "http://172.16.0.145:9090/geoserver/";
+const GEOSERVER_WFS_BASE_URL = "http://172.16.0.145:9090/geoserver/";
+const GEOSERVER_LEGEND_GRAPHIC_BASE_URL = "http://172.16.0.145:9090/geoserver/";
 
 const API_WORKSPACES_URL = "/api/geoserver/workspaces";
 const API_LAYERS_URL_PREFIX = "/api/geoserver/workspaces/";
@@ -28,49 +28,49 @@ const baseLayers = {
         name: 'OpenStreetMap',
         layer: () => L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
+            maxZoom: 22
         })
     },
     'google-satellite': {
         name: 'Google Satellite',
         layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             attribution: '&copy; Google',
-            maxZoom: 20
+            maxZoom: 22
         })
     },
     'google-hybrid': {
         name: 'Google Hybrid',
         layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             attribution: '&copy; Google',
-            maxZoom: 20
+            maxZoom: 22
         })
     },
     'google-terrain': {
         name: 'Google Terrain',
         layer: () => L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
             attribution: '&copy; Google',
-            maxZoom: 20
+            maxZoom: 22
         })
     },
     'esri-satellite': {
         name: 'Esri Satellite',
         layer: () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxZoom: 18
+            maxZoom: 22
         })
     },
     'cartodb-light': {
         name: 'CartoDB Light',
         layer: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            maxZoom: 19
+            maxZoom: 22
         })
     },
     'cartodb-dark': {
         name: 'CartoDB Dark',
         layer: () => L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            maxZoom: 19
+            maxZoom: 22
         })
     }
 };
@@ -129,14 +129,14 @@ async function initializeMap() {
     // 1. Initialize the Map instance
     map = L.map('map', {
         zoomControl: false,
-        maxZoom: 20,
+        maxZoom: 22,
         minZoom: 2,
     });
     
     // 2. Add OpenStreetMap as default base layer
     osmBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+        maxZoom: 22
     }).addTo(map);
     
     // Set current base layer reference
@@ -155,6 +155,52 @@ async function initializeMap() {
         imperial: false,
         maxWidth: 200
     }).addTo(map);
+
+    // 4. Add Zoom Level and Scale Indicator
+    const zoomScaleControl = L.control({position: 'bottomright'});
+    zoomScaleControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'zoom-scale-info');
+        div.style.cssText = `
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 11px;
+            font-weight: 600;
+            color: #333;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            min-width: 110px;
+            text-align: center;
+            margin-bottom: 10px;
+            margin-right: 10px;
+            backdrop-filter: blur(5px);
+        `;
+        div.innerHTML = `
+            <div>Zoom: ${map.getZoom()}</div>
+            <div>Scale: ${calculateMapScale(map.getZoom())}</div>
+            <div id="meters-per-pixel" style="font-size: 9px; color: #666;"></div>
+        `;
+        return div;
+    };
+    zoomScaleControl.addTo(map);
+
+    // Update zoom and scale info on zoom change and move events
+    function updateZoomScaleInfo() {
+        const zoomDiv = document.querySelector('.zoom-scale-info');
+        if (zoomDiv) {
+            const zoom = map.getZoom();
+            const scale = calculateMapScale(zoom);
+            const metersPerPixel = calculateMetersPerPixel(zoom);
+            zoomDiv.innerHTML = `
+                <div style="margin-bottom: 2px;">Zoom: ${zoom}</div>
+                <div style="margin-bottom: 2px;">Scale: ${scale}</div>
+                <div style="font-size: 9px; color: #666;">${metersPerPixel.toFixed(2)}m/px</div>
+            `;
+        }
+    }
+
+    map.on('zoomend', updateZoomScaleInfo);
+    map.on('moveend', updateZoomScaleInfo);
 
     // 4. Add Compass Control
     addCompassControl();
@@ -241,7 +287,7 @@ function loadOverlayLayers(workspaceName, vectorLayers) {
             transparent: true,
             version: '1.1.1',
             attribution: `Vector Data &copy; ${workspaceName}`,
-            maxZoom: 20,
+            maxZoom: 22,
             minZoom: 1
         });
 
@@ -262,11 +308,11 @@ const workspaceListContainer = document.getElementById('workspace-list');
 
 function setupSidebar() {
     const menuToggleBtn = document.getElementById('menu-toggle-btn');
-    
+
     sidebarToggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('collapsed');
         document.body.classList.toggle('sidebar-collapsed');
-        
+
         if (sidebar.classList.contains('collapsed')) {
             sidebarToggleBtn.textContent = '☰';
             menuToggleBtn.style.display = 'flex'; // Show menu button when sidebar is collapsed
@@ -274,7 +320,7 @@ function setupSidebar() {
             sidebarToggleBtn.textContent = '✖';
             menuToggleBtn.style.display = 'none'; // Hide menu button when sidebar is open
         }
-        
+
         // Force map to resize after sidebar toggle
         setTimeout(() => {
             if (map) {
@@ -282,14 +328,14 @@ function setupSidebar() {
             }
         }, 300); // Wait for CSS transition to complete
     });
-    
+
     // Menu button click handler to reopen sidebar
     menuToggleBtn.addEventListener('click', () => {
         sidebar.classList.remove('collapsed');
         document.body.classList.remove('sidebar-collapsed');
         sidebarToggleBtn.textContent = '✖';
         menuToggleBtn.style.display = 'none';
-        
+
         // Force map to resize after sidebar reopen
         setTimeout(() => {
             if (map) {
@@ -297,8 +343,145 @@ function setupSidebar() {
             }
         }, 300); // Wait for CSS transition to complete
     });
-    
+
+    // Setup search functionality
+    setupProjectSearch();
+
     fetchAndRenderWorkspaces();
+}
+
+// Project search functionality
+function setupProjectSearch() {
+    const searchInput = document.getElementById('project-search');
+    const searchClear = document.getElementById('search-clear');
+
+    if (!searchInput || !searchClear) {
+        console.warn('Search elements not found');
+        return;
+    }
+
+    // Search input event listener
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.trim().toLowerCase();
+
+        if (searchTerm.length > 0) {
+            searchClear.style.display = 'block';
+            filterProjects(searchTerm);
+        } else {
+            searchClear.style.display = 'none';
+            clearProjectFilter();
+        }
+    });
+
+    // Clear search button
+    searchClear.addEventListener('click', function() {
+        searchInput.value = '';
+        searchClear.style.display = 'none';
+        clearProjectFilter();
+        searchInput.focus();
+    });
+
+    // Enter key to focus first visible project
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const firstVisibleProject = document.querySelector('.workspace-item:not(.hidden)');
+            if (firstVisibleProject) {
+                firstVisibleProject.querySelector('.workspace-header').click();
+            }
+        }
+    });
+}
+
+// Filter projects based on search term
+function filterProjects(searchTerm) {
+    const workspaceItems = document.querySelectorAll('.workspace-item');
+    let visibleCount = 0;
+
+    workspaceItems.forEach(item => {
+        const workspaceName = item.querySelector('.workspace-name');
+        if (workspaceName) {
+            const projectName = workspaceName.textContent.toLowerCase();
+            const originalName = workspaceName.getAttribute('data-workspace-original');
+            const originalNameLower = originalName ? originalName.toLowerCase() : '';
+
+            // Check if search term matches either translated or original name
+            const matches = projectName.includes(searchTerm) || originalNameLower.includes(searchTerm);
+
+            if (matches) {
+                item.classList.remove('hidden');
+                item.classList.add('search-highlight');
+                visibleCount++;
+            } else {
+                item.classList.add('hidden');
+                item.classList.remove('search-highlight');
+            }
+        }
+    });
+
+    // Show/hide no results message
+    showNoResultsMessage(visibleCount === 0, searchTerm);
+}
+
+// Clear project filter
+function clearProjectFilter() {
+    const workspaceItems = document.querySelectorAll('.workspace-item');
+    workspaceItems.forEach(item => {
+        item.classList.remove('hidden', 'search-highlight');
+    });
+
+    // Hide no results message
+    hideNoResultsMessage();
+}
+
+// Show no results message
+function showNoResultsMessage(show, searchTerm) {
+    let noResultsDiv = document.getElementById('no-results-message');
+
+    if (show) {
+        if (!noResultsDiv) {
+            noResultsDiv = document.createElement('div');
+            noResultsDiv.id = 'no-results-message';
+            noResultsDiv.className = 'no-results-message';
+            workspaceListContainer.appendChild(noResultsDiv);
+        }
+
+        noResultsDiv.innerHTML = `
+            <i class="fas fa-search"></i>
+            <p>No projects found for "${searchTerm}"</p>
+            <small>Try a different search term</small>
+        `;
+        noResultsDiv.style.display = 'block';
+    } else {
+        hideNoResultsMessage();
+    }
+}
+
+// Hide no results message
+function hideNoResultsMessage() {
+    const noResultsDiv = document.getElementById('no-results-message');
+    if (noResultsDiv) {
+        noResultsDiv.style.display = 'none';
+    }
+}
+
+// Setup base map selector
+function setupBaseMapSelector() {
+    const baseMapSelect = document.getElementById('base-map-select');
+    if (baseMapSelect) {
+        // Remove any existing event listeners
+        const newBaseMapSelect = baseMapSelect.cloneNode(true);
+        baseMapSelect.parentNode.replaceChild(newBaseMapSelect, baseMapSelect);
+
+        // Add event listener for base map selection
+        newBaseMapSelect.addEventListener('change', (e) => {
+            changeBaseLayer(e.target.value);
+        });
+
+        // Apply translations
+        if (window.i18n) {
+            window.i18n.applyLanguage(window.i18n.currentLanguage);
+        }
+    }
 }
 
 // Function to fetch and render workspaces (caches data)
@@ -320,30 +503,9 @@ async function fetchAndRenderWorkspaces() {
 // Function to render workspaces in the sidebar (Updated to remove "Open" button)
 function renderWorkspaces(workspaces) {
     workspaceListContainer.innerHTML = '';
-    
-    // Add base map selector at the top
-    const baseMapSelectorDiv = document.createElement('div');
-    baseMapSelectorDiv.className = 'base-map-selector';
-    baseMapSelectorDiv.innerHTML = `
-        <label for="base-map-select">Base Map:</label>
-        <select id="base-map-select" class="base-map-dropdown">
-            <option value="osm">OpenStreetMap</option>
-            <option value="google-satellite">Google Satellite</option>
-            <option value="google-hybrid">Google Hybrid</option>
-            <option value="google-terrain">Google Terrain</option>
-            <option value="esri-satellite">Esri Satellite</option>
-            <option value="cartodb-light">CartoDB Light</option>
-            <option value="cartodb-dark">CartoDB Dark</option>
-        </select>
-    `;
-    workspaceListContainer.appendChild(baseMapSelectorDiv);
-    
-    // Add event listener for base map selection (simplified)
-    const baseMapSelect = baseMapSelectorDiv.querySelector('#base-map-select');
-    baseMapSelect.addEventListener('change', (e) => {
-        changeBaseLayer(e.target.value);
-        // REMOVED: clearing overlays, legends, layer states, and location reset
-    });
+
+    // Setup base map selector (now in HTML)
+    setupBaseMapSelector();
 
     if (workspaces.length === 0) {
         const noWorkspacesDiv = document.createElement('div');
@@ -357,9 +519,12 @@ function renderWorkspaces(workspaces) {
         workspaceItem.className = 'workspace-item';
         workspaceItem.dataset.workspaceName = workspaceName;
 
+        // Get translated workspace name
+        const translatedName = getTranslatedLayerName(workspaceName);
+
         workspaceItem.innerHTML = `
             <div class="workspace-header">
-                <span>${workspaceName}</span>
+                <span class="workspace-name" data-workspace-original="${workspaceName}">${translatedName}</span>
                 <i class="fas fa-chevron-right toggle-icon"></i>
             </div>
         `;
@@ -402,6 +567,13 @@ function renderWorkspaces(workspaces) {
 
         workspaceListContainer.appendChild(workspaceItem);
     });
+
+    // Apply translations to all newly created workspace items
+    if (window.i18n) {
+        setTimeout(() => {
+            window.i18n.applyLanguage(window.i18n.currentLanguage);
+        }, 100);
+    }
 }
 
 // Function to fetch and render layers for a specific workspace (updated container class)
@@ -572,7 +744,7 @@ function toggleRasterLayerInWorkspace(workspaceName, layerName, isVisible) {
             version: '1.1.1',
             attribution: `Imagery &copy; ${workspaceName}`,
             opacity: 0.8, // Default opacity
-            maxZoom: 20,
+            maxZoom: 22,
             minZoom: 1,
             tileSize: 256,
             zIndex: 2
@@ -627,7 +799,7 @@ function toggleVectorLayerInWorkspace(workspaceName, layerName, isVisible) {
             version: '1.1.1',
             attribution: `Vector Data &copy; ${workspaceName}`,
             opacity: 0.8, // Default opacity
-            maxZoom: 20,
+            maxZoom: 22,
             minZoom: 1,
             tileSize: 256,
             zIndex: 3
@@ -724,22 +896,27 @@ function addLegendCard(workspaceName, layerName, fullLayerName) {
     legendItem.innerHTML = `
         <div class="legend-item-content">
             <div class="legend-graphic-container">
-                <img src="${legendUrl}" 
-                     alt="Legend for ${layerName}" 
+                <img src="${legendUrl}"
+                     alt="Legend for ${layerName}"
                      class="legend-image"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <div class="legend-error" style="display: none;">Legend not available</div>
             </div>
-            <span class="legend-layer-name">${layerName}</span>
+            <div class="legend-item-header">
+                <span class="legend-layer-name">${layerName}</span>
+                <button class="legend-close-btn" data-layer-id="${fullLayerName}" title="Remove layer">
+                    ×
+                </button>
+            </div>
         </div>
         <div class="opacity-control">
             <span class="opacity-label">Opacity:</span>
-            <input type="range" 
-                   id="${sliderId}" 
-                   class="opacity-slider" 
-                   min="0" 
-                   max="100" 
-                   value="80" 
+            <input type="range"
+                   id="${sliderId}"
+                   class="opacity-slider"
+                   min="0"
+                   max="100"
+                   value="80"
                    data-layer-id="${fullLayerName}">
             <span id="${valueId}" class="opacity-value">80%</span>
         </div>
@@ -754,14 +931,23 @@ function addLegendCard(workspaceName, layerName, fullLayerName) {
     opacitySlider.addEventListener('input', function() {
         const opacity = this.value / 100; // Convert to 0-1 range
         const layerId = this.dataset.layerId;
-        
+
         // Update display value
         opacityValue.textContent = `${this.value}%`;
-        
+
         // Update layer opacity
         updateLayerOpacity(layerId, opacity);
     });
-    
+
+    // Add event listener for close button
+    const closeBtn = legendItem.querySelector('.legend-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            const layerId = this.getAttribute('data-layer-id');
+            removeLegendAndLayer(layerId);
+        });
+    }
+
     console.log(`Added GeoServer legend for ${fullLayerName} with opacity control`);
 }
 
@@ -788,7 +974,7 @@ function removeLegendCard(fullLayerName) {
     if (legendItem) {
         legendItem.remove();
     }
-    
+
     // If no more legend items, remove the entire legend card
     const legendItems = document.getElementById('legend-items');
     if (legendItems && legendItems.children.length === 0) {
@@ -796,6 +982,51 @@ function removeLegendCard(fullLayerName) {
         if (legendContainer) {
             legendContainer.remove();
         }
+    }
+}
+
+// Function to remove legend and disable layer in sidebar
+function removeLegendAndLayer(fullLayerName) {
+    console.log(`Removing legend and layer: ${fullLayerName}`);
+
+    // Remove from map
+    let layerRemoved = false;
+    currentOverlayLayers.eachLayer(layer => {
+        if (layer._layerId === fullLayerName) {
+            currentOverlayLayers.removeLayer(layer);
+            layerRemoved = true;
+        }
+    });
+
+    if (layerRemoved) {
+        console.log(`Removed layer ${fullLayerName} from map`);
+    }
+
+    // Remove legend
+    removeLegendCard(fullLayerName);
+
+    // Uncheck the corresponding checkbox in sidebar
+    const layerKey = fullLayerName;
+    layerStates[layerKey] = false;
+
+    // Find and uncheck the checkbox
+    const checkboxes = document.querySelectorAll('.layer-checkbox');
+    checkboxes.forEach(checkbox => {
+        const workspaceName = checkbox.closest('.workspace-item').dataset.workspaceName;
+        const layerName = checkbox.dataset.layerName;
+        const checkboxLayerKey = `${workspaceName}:${layerName}`;
+
+        if (checkboxLayerKey === fullLayerName) {
+            checkbox.checked = false;
+            console.log(`Unchecked checkbox for ${fullLayerName}`);
+        }
+    });
+
+    // Remove click handlers for vector layers
+    if (window.vectorLayerClickHandlers && window.vectorLayerClickHandlers[fullLayerName]) {
+        map.off('click', window.vectorLayerClickHandlers[fullLayerName]);
+        delete window.vectorLayerClickHandlers[fullLayerName];
+        console.log(`Removed click handler for ${fullLayerName}`);
     }
 }
 
@@ -822,7 +1053,7 @@ function setupUIEventListeners() {
 
     // Locate Me
     document.getElementById('locate-me').addEventListener('click', () => {
-        map.locate({setView: true, maxZoom: 16});
+        map.locate({setView: true, maxZoom: 18});
     });
     map.on('locationfound', (e) => {
         L.marker(e.latlng).addTo(map)
@@ -844,86 +1075,58 @@ function setupUIEventListeners() {
         }
     });
     
-    // Language Switch
-    const langEn = document.getElementById('lang-en');
-    const langHi = document.getElementById('lang-hi');
-    
-    langEn.addEventListener('click', () => {
-        setLanguage('en');
-        langEn.classList.add('active');
-        langHi.classList.remove('active');
-    });
-    
-    langHi.addEventListener('click', () => {
-        setLanguage('hi');
-        langHi.classList.add('active');
-        langEn.classList.remove('active');
-    });
+    // Language switching is now handled by i18n.js
 }
 
-// Language translations
-const translations = {
-    en: {
-        appTitle: "Drone Application & Research Center",
-        subTitle: "Uttarakhand Space Application Center",
-        geoserverProjects: "Projects",
-        searchPlaceholder: "Search for Location",
-        resetToOSM: "Reset to OpenStreetMap",
-        open: "Open",
-        noLayers: "No vector layers found.",
-        legends: "Legends",
-        legendNotAvailable: "Legend not available"
-    },
-    hi: {
-        appTitle: "ड्रोन अनुप्रयोग और अनुसंधान केंद्र",
-        subTitle: "उत्तराखंड अंतरिक्ष अनुप्रयोग केंद्र",
-        geoserverProjects: "प्रोजेक्ट्स",
-        searchPlaceholder: "स्थान खोजें",
-        resetToOSM: "ओपनस्ट्रीटमैप पर वापस जाएं",
-        open: "खोलें",
-        noLayers: "कोई वेक्टर लेयर नहीं मिली।",
-        legends: "प्रतीक चिन्ह",
-        legendNotAvailable: "प्रतीक चिन्ह उपलब्ध नहीं है"
-    }
-};
+// Language translations are now handled by i18n.js
 
-// Function to set language
-function setLanguage(lang) {
-    // Update header
-    document.querySelector('.title-container h1').textContent = translations[lang].appTitle;
-    document.querySelector('.title-container h2').textContent = translations[lang].subTitle;
-    
-    // Update sidebar header
-    document.querySelector('.sidebar-header h2').textContent = translations[lang].geoserverProjects;
-    
-    // Update search placeholder
-    document.getElementById('search-input').placeholder = translations[lang].searchPlaceholder;
-    
-    // Update OSM reset button
-    const osmResetBtn = document.querySelector('.osm-reset-btn');
-    if (osmResetBtn) {
-        osmResetBtn.innerHTML = `<i class="fas fa-globe"></i> ${translations[lang].resetToOSM}`;
+// Function to get translated layer name
+function getTranslatedLayerName(layerName) {
+    if (!window.i18n) {
+        return layerName; // Return original if i18n not available
     }
-    
-    // Update open buttons
-    document.querySelectorAll('.open-workspace-btn').forEach(btn => {
-        btn.textContent = translations[lang].open;
-    });
-    
-    // Update no layers text
-    document.querySelectorAll('.no-layers').forEach(el => {
-        el.textContent = translations[lang].noLayers;
-    });
-    
-    // Update legends header
-    const legendsHeader = document.querySelector('.legends-card .legend-header h4');
-    if (legendsHeader) {
-        legendsHeader.textContent = translations[lang].legends;
+
+    // Map layer names to translation keys
+    const layerKeyMap = {
+        'Administrative_Boundries': 'administrativeBoundries',
+        'Badrinath_2022': 'badrinath2022',
+        'Chakrata': 'chakrata',
+        'ITDA_Dehradun': 'itdaDehradun',
+        'Joshimath_2023': 'joshimath2023',
+        'Kochar_Colony_Dehradun_2023': 'kocharColonyDehradun2023',
+        'Maldevta_2021': 'maldevta2021',
+        'Malin_Basti_Dehradun_2024': 'malinBastiDehradun2024',
+        'Malin_Basti_Rispana_Dehradun_2025': 'malinBastiRispanaDehradun2025',
+        'Mining_2022': 'mining2022',
+        'SIIDCUL': 'siidcul',
+        'Sarkhet_2022_River_Map': 'sarkhet2022RiverMap',
+        'Sesambara_Dumpyard': 'sesambaraDumpyard',
+        'Stamp_and_Registration': 'stampAndRegistration',
+        'Tapovan_Dam_Chamoli_2022': 'tapovanDamChamoli2022',
+        'Village_Boundries': 'villageBoundries'
+    };
+
+    const translationKey = layerKeyMap[layerName];
+    if (translationKey) {
+        return window.i18n.t(translationKey);
     }
-    
-    // Update legend not available text
-    document.querySelectorAll('.legend-error').forEach(el => {
-        el.textContent = translations[lang].legendNotAvailable;
+
+    return layerName; // Return original if no translation found
+}
+
+// Function to update all workspace names when language changes
+function updateWorkspaceNames() {
+    console.log('🔄 Updating workspace names...');
+    const workspaceElements = document.querySelectorAll('.workspace-name');
+    console.log('Found', workspaceElements.length, 'workspace elements');
+
+    workspaceElements.forEach(element => {
+        const originalName = element.getAttribute('data-workspace-original');
+        if (originalName) {
+            const translatedName = getTranslatedLayerName(originalName);
+            console.log(`Translating: ${originalName} → ${translatedName}`);
+            element.textContent = translatedName;
+        }
     });
 }
 
@@ -1126,7 +1329,7 @@ async function fitMapToLayerBounds(fullLayerName) {
             // Step 5: Fit the map to these bounds with padding
             const paddingOptions = {
                 padding: [50, 50], // 50px padding on all sides
-                maxZoom: 18 // Maximum zoom level
+                maxZoom: 20 // Maximum zoom level for fitting bounds
             };
             
             map.fitBounds(leafletBounds, paddingOptions);
@@ -1456,16 +1659,28 @@ function calculateMapScale(zoom) {
     const mapWidth = map.getSize().x; // pixels
     const metersPerPixel = earthCircumference * Math.cos(map.getCenter().lat * Math.PI / 180) / Math.pow(2, zoom + 8);
     const scale = metersPerPixel * 96 / 0.0254; // Convert to scale (assuming 96 DPI)
-    
-    // Round to nice numbers
+
+    // Round to nice numbers with better precision for high zoom levels
     if (scale > 1000000) {
         return `1:${Math.round(scale / 100000) * 100000}`;
     } else if (scale > 100000) {
         return `1:${Math.round(scale / 10000) * 10000}`;
     } else if (scale > 10000) {
         return `1:${Math.round(scale / 1000) * 1000}`;
-    } else {
+    } else if (scale > 1000) {
         return `1:${Math.round(scale / 100) * 100}`;
+    } else if (scale > 100) {
+        return `1:${Math.round(scale / 10) * 10}`;
+    } else {
+        return `1:${Math.round(scale)}`;
     }
 }
+
+// Calculate meters per pixel for current zoom level
+function calculateMetersPerPixel(zoom) {
+    const earthCircumference = 40075016.686; // meters
+    const lat = map.getCenter().lat;
+    return earthCircumference * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom + 8);
+}
+
 
